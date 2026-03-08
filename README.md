@@ -8,7 +8,7 @@ FFmpegを使用した動画圧縮Pythonスクリプト
 - **コーデック**: SVT-AV1 (高速AV1コーデック)
 - **CRF (品質設定)**: デフォルト25 (0-63、低いほど高品質、高いほどファイルサイズ小)
 - **音声コーデック**: MP3 (libmp3lame)
-- **音声ビットレート**: 最大320kbps
+- **音声ビットレート**: 最大192kbps
 
 ## 前提条件
 
@@ -94,7 +94,7 @@ python compress_video.py 入力動画.mp4 -o 出力動画.mp4 --crf 23 --audio-b
 | `input` | 入力動画ファイルのパス（必須） | - |
 | `-o`, `--output` | 出力動画ファイルのパス | `{入力ファイル名}_compressed.{拡張子}` |
 | `--crf` | AV1のCRF値 (0-63) | 25 |
-| `--audio-bitrate` | 音声ビットレート | 320k |
+| `--audio-bitrate` | 音声ビットレート | 192k |
 
 ## ヘルプ
 
@@ -120,7 +120,7 @@ python compress_video.py --help
 ### 音声処理
 
 - MP3形式に変換（libmp3lameエンコーダー）
-- 最大320kbpsまで設定可能
+- 最大192kbpsまで設定可能
 
 ## 例
 

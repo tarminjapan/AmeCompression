@@ -3,7 +3,7 @@
 FFmpegを使用した動画圧縮スクリプト
 - 最大解像度: 2K (2560x1440)
 - コーデック: SVT-AV1 (高速AV1コーデック、CRF 25)
-- 音声: MP3 (最大320kbps)
+- 音声: MP3 (最大192kbps)
 """
 
 import subprocess
@@ -76,7 +76,7 @@ def calculate_scaled_resolution(width, height, max_width=2560, max_height=1440):
     return (scaled_width, scaled_height)
 
 
-def compress_video(input_path, output_path=None, crf=25, audio_bitrate="320k"):
+def compress_video(input_path, output_path=None, crf=25, audio_bitrate="192k"):
     """
     FFmpegとAV1コーデックを使用して動画を圧縮
 
@@ -84,7 +84,7 @@ def compress_video(input_path, output_path=None, crf=25, audio_bitrate="320k"):
         input_path (str): 入力動画ファイルのパス
         output_path (str): 出力動画ファイルのパス（オプション）
         crf (int): AV1のCRF値（デフォルト: 25）
-        audio_bitrate (str): 音声ビットレート（デフォルト: 320k）
+        audio_bitrate (str): 音声ビットレート（デフォルト: 192k）
     """
     input_path = Path(input_path)
 
@@ -137,7 +137,7 @@ def compress_video(input_path, output_path=None, crf=25, audio_bitrate="320k"):
             "-b:v",
             "0",  # ビットレートベースのエンコーディングを無効化（CRFモード）
             "-preset",
-            "4",  # エンコード速度プリセット（0-13、高いほど高速）
+            "6",  # エンコード速度プリセット（0-13、高いほど高速）
         ]
     )
 
@@ -226,7 +226,7 @@ def main():
         help="AV1 CRF値（0-63、低いほど高品質、高いほど小サイズ、デフォルト: 25）",
     )
     parser.add_argument(
-        "--audio-bitrate", default="320k", help="音声ビットレート（デフォルト: 320k）"
+        "--audio-bitrate", default="192k", help="音声ビットレート（デフォルト: 192k）"
     )
 
     args = parser.parse_args()
