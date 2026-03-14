@@ -279,6 +279,9 @@ def main():
             print("エラー: 入力ファイルのパスが指定されていません。")
             sys.exit(1)
 
+    # 先頭と末尾のダブルクォートを削除
+    input_path = input_path.strip('"')
+
     # CRF値を検証
     if not CRF_MIN <= args.crf <= CRF_MAX:
         print(f"エラー: CRFは{CRF_MIN}から{CRF_MAX}の間でなければなりません")
