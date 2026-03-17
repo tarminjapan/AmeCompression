@@ -71,6 +71,20 @@ python compress_video.py input_video.mp4
 
 出力ファイルは自動的に `input_video_compressed.mp4` として作成されます。
 
+### インタラクティブモード（入力ファイル未指定時）
+
+入力ファイルを指定せずにスクリプトを実行すると、パスの入力を求められます：
+
+```bash
+python compress_video.py
+```
+
+```text
+Enter the path to the video file to compress: input_video.mp4
+```
+
+> **注意**: スクリプトは自動的にファイルパスの前後のダブルクォートを削除するため、`"C:\Videos\my video.mp4"` のようなパスも正しく動作します。
+
 ### 出力ファイル名を指定
 
 ```bash
@@ -122,7 +136,7 @@ python compress_video.py input_video.mp4 -o output_video.mp4 --crf 23 --audio-bi
 
 | オプション | 説明 | デフォルト値 |
 | - | - | - |
-| `input` | 入力動画ファイルパス（必須） | - |
+| `input` | 入力動画ファイルパス（任意、未指定時は入力を求められます） | - |
 | `-o`, `--output` | 出力動画ファイルパス | `{入力ファイル名}_compressed.{拡張子}` |
 | `--crf` | AV1 CRF値（0-63） | 25 |
 | `--audio-bitrate` | オーディオビットレート（最大: 320k） | 192k |

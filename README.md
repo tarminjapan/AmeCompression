@@ -71,6 +71,20 @@ python compress_video.py input_video.mp4
 
 The output file will be automatically created as `input_video_compressed.mp4`.
 
+### Interactive Mode (No Input File Specified)
+
+If you run the script without specifying an input file, you will be prompted to enter the path:
+
+```bash
+python compress_video.py
+```
+
+```text
+Enter the path to the video file to compress: input_video.mp4
+```
+
+> **Note**: The script automatically removes surrounding double quotes from file paths, so paths like `"C:\Videos\my video.mp4"` will work correctly.
+
 ### Specify Output File Name
 
 ```bash
@@ -122,7 +136,7 @@ python compress_video.py input_video.mp4 -o output_video.mp4 --crf 23 --audio-bi
 
 | Option | Description | Default |
 | - | - | - |
-| `input` | Input video file path (required) | - |
+| `input` | Input video file path (optional, will prompt if not provided) | - |
 | `-o`, `--output` | Output video file path | `{input_filename}_compressed.{extension}` |
 | `--crf` | AV1 CRF value (0-63) | 25 |
 | `--audio-bitrate` | Audio bitrate (max: 320k) | 192k |
