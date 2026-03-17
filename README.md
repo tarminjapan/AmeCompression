@@ -7,7 +7,7 @@ A Python script for video compression using FFmpeg with SVT-AV1 codec.
 - **Maximum Resolution**: 4K (3840x2160)
 - **Codec**: SVT-AV1 (fast AV1 codec)
 - **CRF (Quality)**: Default 25 (0-63, lower = higher quality, higher = smaller file size)
-- **Audio Codec**: MP3 (libmp3lame)
+- **Audio Codec**: AAC
 - **Audio Bitrate**: Maximum 320kbps
 - **Maximum FPS**: 120fps
 - **Progress Display**: Real-time progress bar with ETA, FPS, and speed indicators
@@ -160,7 +160,7 @@ python compress_video.py --help
 
 ### Audio Processing
 
-- Converted to MP3 format (libmp3lame encoder)
+- Converted to AAC format
 - Maximum 320kbps bitrate
 - Can be disabled with `--no-audio`
 

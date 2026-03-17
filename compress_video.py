@@ -3,7 +3,7 @@
 Video Compression Script using FFmpeg
 - Maximum resolution: 4K (3840x2160)
 - Codec: SVT-AV1 (fast AV1 codec, CRF 25)
-- Audio: MP3 (maximum 320kbps)
+- Audio: AAC (maximum 320kbps)
 - Maximum FPS: 120
 """
 
@@ -30,7 +30,7 @@ DEFAULT_FPS = None  # Default FPS (None = keep original)
 MAX_FPS = 120  # Maximum FPS
 
 # Audio codec settings
-AUDIO_CODEC = "libmp3lame"  # Audio codec (MP3)
+AUDIO_CODEC = "aac"  # Audio codec (AAC)
 DEFAULT_AUDIO_BITRATE = "192k"  # Default audio bitrate
 MAX_AUDIO_BITRATE = 320  # Maximum audio bitrate in kbps
 DEFAULT_AUDIO_ENABLED = True  # Audio enabled by default
