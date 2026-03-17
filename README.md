@@ -1,35 +1,39 @@
 # Video Compression Script
 
-FFmpegを使用した動画圧縮Pythonスクリプト
+A Python script for video compression using FFmpeg with SVT-AV1 codec.
 
-## 機能
+## Features
 
-- **最大解像度**: 2K (2560x1440) に制限
-- **コーデック**: SVT-AV1 (高速AV1コーデック)
-- **CRF (品質設定)**: デフォルト25 (0-63、低いほど高品質、高いほどファイルサイズ小)
-- **音声コーデック**: MP3 (libmp3lame)
-- **音声ビットレート**: 最大192kbps
+- **Maximum Resolution**: 4K (3840x2160)
+- **Codec**: SVT-AV1 (fast AV1 codec)
+- **CRF (Quality)**: Default 25 (0-63, lower = higher quality, higher = smaller file size)
+- **Audio Codec**: MP3 (libmp3lame)
+- **Audio Bitrate**: Maximum 320kbps
+- **Maximum FPS**: 120fps
+- **Progress Display**: Real-time progress bar with ETA, FPS, and speed indicators
 
-## 前提条件
+## Prerequisites
 
-このスクリプトを使用するには、以下がインストールされている必要があります：
+To use this script, you need the following:
 
-### FFmpegのインストール
+### FFmpeg Installation
+
+**Option 1: System-wide Installation**
 
 **Windows:**
 
-1. [FFmpeg公式サイト](https://ffmpeg.org/download.html)からFFmpegをダウンロード
-2. 解凍して任意のディレクトリに配置（例: `C:\ffmpeg`）
-3. システム環境変数のPATHにFFmpegのbinディレクトリを追加（例: `C:\ffmpeg\bin`）
-4. インストールを確認: `ffmpeg -version` および `ffprobe -version`
+1. Download FFmpeg from the [official website](https://ffmpeg.org/download.html)
+2. Extract and place it in a directory (e.g., `C:\ffmpeg`)
+3. Add the FFmpeg bin directory to your system PATH (e.g., `C:\ffmpeg\bin`)
+4. Verify installation: `ffmpeg -version` and `ffprobe -version`
 
-**またはChocolateyを使用:**
+**Or using Chocolatey:**
 
 ```powershell
 choco install ffmpeg
 ```
 
-**またはwingetを使用:**
+**Or using winget:**
 
 ```powershell
 winget install ffmpeg
@@ -48,121 +52,190 @@ sudo apt update
 sudo apt install ffmpeg
 ```
 
-## 使い方
+**Option 2: Local FFmpeg (Recommended for Portability)**
 
-### 基本的な使い方
+You can place FFmpeg executables in the same directory as the script:
 
-```bash
-python compress_video.py 入力動画.mp4
-```
+- Windows: `ffmpeg.exe` and `ffprobe.exe`
+- macOS/Linux: `ffmpeg` and `ffprobe`
 
-出力ファイルは `入力動画_compressed.mp4` として自動的に作成されます。
+The script will automatically detect and use local executables if they exist.
 
-### 出力ファイル名を指定
+## Usage
 
-```bash
-python compress_video.py 入力動画.mp4 -o 出力動画.mp4
-```
-
-### CRF値を変更（品質調整）
+### Basic Usage
 
 ```bash
-python compress_video.py 入力動画.mp4 --crf 23
+python compress_video.py input_video.mp4
 ```
 
-- CRF 0-23: 高品質（ファイルサイズ大）
-- CRF 25: デフォルト（品質とサイズのバランス）
-- CRF 26-40: 中程度の品質
-- CRF 40-63: 低品質（ファイルサイズ小）
+The output file will be automatically created as `input_video_compressed.mp4`.
 
-### 音声ビットレートを変更
+### Specify Output File Name
 
 ```bash
-python compress_video.py 入力動画.mp4 --audio-bitrate 256k
+python compress_video.py input_video.mp4 -o output_video.mp4
 ```
 
-### 全てのオプションを指定
+### Change CRF Value (Quality Adjustment)
 
 ```bash
-python compress_video.py 入力動画.mp4 -o 出力動画.mp4 --crf 23 --audio-bitrate 256k
+python compress_video.py input_video.mp4 --crf 23
 ```
 
-## オプション
+- CRF 0-23: High quality (larger file size)
+- CRF 25: Default (balance between quality and size)
+- CRF 26-40: Medium quality
+- CRF 40-63: Low quality (smaller file size)
 
-| オプション | 説明 | デフォルト値 |
+### Change Audio Bitrate
+
+```bash
+python compress_video.py input_video.mp4 --audio-bitrate 256k
+```
+
+### Disable Audio
+
+```bash
+python compress_video.py input_video.mp4 --no-audio
+```
+
+### Limit Resolution
+
+```bash
+python compress_video.py input_video.mp4 --resolution 1920x1080
+```
+
+### Limit FPS
+
+```bash
+python compress_video.py input_video.mp4 --fps 30
+```
+
+### All Options Combined
+
+```bash
+python compress_video.py input_video.mp4 -o output_video.mp4 --crf 23 --audio-bitrate 256k --resolution 1920x1080 --fps 60
+```
+
+## Options
+
+| Option | Description | Default |
 | - | - | - |
-| `input` | 入力動画ファイルのパス（必須） | - |
-| `-o`, `--output` | 出力動画ファイルのパス | `{入力ファイル名}_compressed.{拡張子}` |
-| `--crf` | AV1のCRF値 (0-63) | 25 |
-| `--audio-bitrate` | 音声ビットレート | 192k |
+| `input` | Input video file path (required) | - |
+| `-o`, `--output` | Output video file path | `{input_filename}_compressed.{extension}` |
+| `--crf` | AV1 CRF value (0-63) | 25 |
+| `--audio-bitrate` | Audio bitrate (max: 320k) | 192k |
+| `--no-audio` | Disable audio track | Audio enabled |
+| `--fps` | Maximum FPS (max: 120) | Original FPS |
+| `--resolution` | Maximum resolution in WxH format (e.g., 1920x1080) | 3840x2160 |
 
-## ヘルプ
+## Help
 
 ```bash
 python compress_video.py --help
 ```
 
-## 機能の詳細
+## Feature Details
 
-### 解像度制限
+### Resolution Limit
 
-- 元動画の解像度が2K (2560x1440) を超えている場合、アスペクト比を維持したまま2K以下に縮小されます
-- 解像度が2K以下の場合は、元の解像度が維持されます
+- If the original video exceeds 4K (3840x2160), it will be scaled down while maintaining aspect ratio
+- If the resolution is within limits, the original resolution is preserved
+- Custom resolution limits can be set with `--resolution`
 
-### SVT-AV1コーデック
+### FPS Limit
 
-- Intelが開発した高速なAV1エンコーダー
-- libaom-av1に比べて10-100倍の高速エンコードを実現
-- 最新のビデオ圧縮規格で、高い圧縮率を維持
-- CRFモードでエンコード（品質ベースの可変ビットレート）
-- 自動マルチスレッド対応
+- If the original video FPS exceeds the specified maximum, it will be reduced
+- Default maximum is 120fps
+- If the FPS is within limits, the original FPS is preserved
 
-### 音声処理
+### SVT-AV1 Codec
 
-- MP3形式に変換（libmp3lameエンコーダー）
-- 最大192kbpsまで設定可能
+- Fast AV1 encoder developed by Intel
+- 10-100x faster encoding compared to libaom-av1
+- Latest video compression standard with high compression efficiency
+- CRF mode encoding (quality-based variable bitrate)
+- Automatic multi-threading support
 
-## 例
+### Audio Processing
 
-### 4K動画を圧縮
+- Converted to MP3 format (libmp3lame encoder)
+- Maximum 320kbps bitrate
+- Can be disabled with `--no-audio`
+
+### Progress Display
+
+During compression, a real-time progress bar is displayed showing:
+
+- Progress percentage with visual bar
+- Current time / Total time
+- ETA (Estimated Time Remaining)
+- Encoding FPS
+- Speed multiplier
+- Frame count
+
+## Examples
+
+### Compress 8K Video to 4K
 
 ```bash
-python compress_video.py 4k_video.mp4 -o compressed_2k.mp4
+python compress_video.py 8k_video.mp4 -o compressed_4k.mp4
 ```
 
-出力: 解像度が2560x1440以下に縮小されます
+Output: Resolution will be scaled down to 3840x2160 or below
 
-### 高品質圧縮
+### Compress for Web (1080p, 30fps)
+
+```bash
+python compress_video.py video.mp4 --resolution 1920x1080 --fps 30
+```
+
+### High Quality Compression
 
 ```bash
 python compress_video.py video.mp4 --crf 20 --audio-bitrate 320k
 ```
 
-### 小サイズ優先
+### Small File Size Priority
 
 ```bash
-python compress_video.py video.mp4 --crf 35 --audio-bitrate 192k
+python compress_video.py video.mp4 --crf 35 --audio-bitrate 128k
 ```
 
-## 注意点
+### Video Only (No Audio)
 
-- AV1エンコードはCPU集約型のため、高解像度の動画では処理に時間がかかる場合があります
-- エンコード中にCtrl+Cを押すと処理を中断できます
-- 出力ファイルが既存の場合は、上書きされます（`-y`オプション）
+```bash
+python compress_video.py video.mp4 --no-audio
+```
 
-## エラー対処
+## Notes
 
-### `FFmpeg not found` エラー
+- AV1 encoding is CPU-intensive; high-resolution videos may take longer to process
+- Press Ctrl+C during encoding to interrupt the process
+- If the output file already exists, it will be overwritten (`-y` option)
 
-- FFmpegが正しくインストールされているか確認してください
-- システムのPATH環境変数にFFmpegが含まれているか確認してください
-- コマンドラインで `ffmpeg -version` を実行して確認してください
+## Troubleshooting
 
-### 動画情報の取得エラー
+### `FFmpeg not found` Error
 
-- 入力ファイルが存在するか確認してください
-- ファイルが破損していないか確認してください
+- Ensure FFmpeg is correctly installed
+- Check that FFmpeg is included in your system PATH
+- Alternatively, place `ffmpeg` and `ffprobe` executables in the script directory
+- Verify by running `ffmpeg -version` in the command line
 
-## ライセンス
+### Video Info Retrieval Error
 
-このスクリプトは自由に使用、修正、配布できます。
+- Verify that the input file exists
+- Check if the file is corrupted
+- Ensure the file is a valid video format
+
+### Progress Bar Not Displaying
+
+- The progress bar requires video duration information
+- Some video formats may not provide duration metadata
+- The compression will still complete successfully
+
+## License
+
+This script is free to use, modify, and distribute.

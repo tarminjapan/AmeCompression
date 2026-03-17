@@ -1,56 +1,111 @@
 #!/usr/bin/env python3
 """
-FFmpegを使用した動画圧縮スクリプト
-- 最大解像度: 2K (2560x1440)
-- コーデック: SVT-AV1 (高速AV1コーデック、CRF 25)
-- 音声: MP3 (最大192kbps)
+Video Compression Script using FFmpeg
+- Maximum resolution: 4K (3840x2160)
+- Codec: SVT-AV1 (fast AV1 codec, CRF 25)
+- Audio: MP3 (maximum 320kbps)
+- Maximum FPS: 120
 """
 
 import argparse
+import platform
+import re
 import subprocess
 import sys
 from pathlib import Path
 
-
 # ============================================
-# 設定値・定数（ここを変更してカスタマイズ）
+# Settings & Constants (Customize here)
 # ============================================
 
-# 解像度設定（2K = 2560x1440）
-MAX_WIDTH = 2560  # 最大幅
-MAX_HEIGHT = 1440  # 最大高さ
+# Resolution settings (4K = 3840x2160)
+MAX_WIDTH = 3840  # Maximum width
+MAX_HEIGHT = 2160  # Maximum height
 
-# ビデオコーデック設定
-VIDEO_CODEC = "libsvtav1"  # ビデオコーデック（SVT-AV1）
-DEFAULT_CRF = 25  # CRF値（0-63、低いほど高品質・大容量、高いほど低品質・小容量）
-VIDEO_PRESET = 6  # エンコード速度プリセット（0-13、高いほど高速）
+# Video codec settings
+VIDEO_CODEC = "libsvtav1"  # Video codec (SVT-AV1)
+DEFAULT_CRF = 25  # CRF value (0-63, lower = higher quality/larger, higher = lower quality/smaller)
+VIDEO_PRESET = 6  # Encoding speed preset (0-13, higher = faster)
+DEFAULT_FPS = None  # Default FPS (None = keep original)
+MAX_FPS = 120  # Maximum FPS
 
-# オーディオコーデック設定
-AUDIO_CODEC = "libmp3lame"  # オーディオコーデック（MP3）
-DEFAULT_AUDIO_BITRATE = "192k"  # デフォルト音声ビットレート
+# Audio codec settings
+AUDIO_CODEC = "libmp3lame"  # Audio codec (MP3)
+DEFAULT_AUDIO_BITRATE = "192k"  # Default audio bitrate
+MAX_AUDIO_BITRATE = 320  # Maximum audio bitrate in kbps
+DEFAULT_AUDIO_ENABLED = True  # Audio enabled by default
 
-# CRF値の範囲
+# CRF value range
 CRF_MIN = 0
 CRF_MAX = 63
 
+# Progress bar settings
+PROGRESS_BAR_LENGTH = 30
+
 # ============================================
 
 
-def get_video_info(video_path):
+def get_ffmpeg_executables():
     """
-    ffprobeを使用して動画情報を取得
+    Detect OS and return appropriate FFmpeg executable paths.
+    Checks for local FFmpeg executables in the script root directory first.
 
-    戻り値:
-        dict: 動画の幅、高さ
+    Returns:
+        tuple: (ffmpeg_path, ffprobe_path)
+    """
+    script_dir = Path(__file__).parent.resolve()
+
+    # Determine executable names based on OS
+    is_windows = platform.system() == "Windows"
+    ffmpeg_name = "ffmpeg.exe" if is_windows else "ffmpeg"
+    ffprobe_name = "ffprobe.exe" if is_windows else "ffprobe"
+
+    # Check for local FFmpeg executables
+    local_ffmpeg = script_dir / ffmpeg_name
+    local_ffprobe = script_dir / ffprobe_name
+
+    if local_ffmpeg.exists() and local_ffprobe.exists():
+        print(f"Using local FFmpeg: {local_ffmpeg}")
+        return str(local_ffmpeg), str(local_ffprobe)
+
+    # Fall back to system FFmpeg
+    return "ffmpeg", "ffprobe"
+
+
+def format_time(seconds):
+    """
+    Format seconds to MM:SS.s format.
+
+    Args:
+        seconds (float): Time in seconds
+
+    Returns:
+        str: Formatted time string
+    """
+    minutes = int(seconds // 60)
+    secs = seconds % 60
+    return f"{minutes:02d}:{secs:04.1f}"
+
+
+def get_video_info(video_path, ffprobe_path="ffprobe"):
+    """
+    Get video information using ffprobe.
+
+    Args:
+        video_path (str): Path to video file
+        ffprobe_path (str): Path to ffprobe executable
+
+    Returns:
+        dict: Video width, height, duration, fps
     """
     cmd = [
-        "ffprobe",
+        ffprobe_path,
         "-v",
         "error",
         "-select_streams",
         "v:0",
         "-show_entries",
-        "stream=width,height",
+        "stream=width,height,r_frame_rate,duration",
         "-of",
         "csv=s=x:p=0",
         str(video_path),
@@ -60,10 +115,41 @@ def get_video_info(video_path):
         result = subprocess.run(cmd, capture_output=True, text=True, check=True)
         output = result.stdout.strip()
         if output:
-            width, height = map(int, output.split("x"))
-            return {"width": width, "height": height}
+            parts = output.split("x")
+            if len(parts) >= 2:
+                width = int(parts[0])
+                remaining = parts[1].split(",")
+                height = int(remaining[0])
+
+                # Parse FPS (format: 30/1 or 29.97)
+                fps = None
+                duration = None
+                if len(remaining) > 1:
+                    fps_str = remaining[1]
+                    if "/" in fps_str:
+                        num, den = fps_str.split("/")
+                        if float(den) != 0:
+                            fps = float(num) / float(den)
+                    else:
+                        try:
+                            fps = float(fps_str)
+                        except ValueError:
+                            pass
+
+                if len(remaining) > 2:
+                    try:
+                        duration = float(remaining[2])
+                    except ValueError:
+                        pass
+
+                return {
+                    "width": width,
+                    "height": height,
+                    "fps": fps,
+                    "duration": duration,
+                }
     except subprocess.CalledProcessError as e:
-        print(f"動画情報の取得エラー: {e.stderr}")
+        print(f"Error getting video info: {e.stderr}")
         sys.exit(1)
 
     return None
@@ -71,63 +157,168 @@ def get_video_info(video_path):
 
 def calculate_scaled_resolution(width, height, max_width=None, max_height=None):
     """
-    アスペクト比を維持したまま縮小後の解像度を計算
+    Calculate scaled resolution while maintaining aspect ratio.
 
-    引数:
-        width (int): 元の幅
-        height (int): 元の高さ
-        max_width (int): 許可される最大幅（デフォルト: MAX_WIDTH）
-        max_height (int): 許可される最大高さ（デフォルト: MAX_HEIGHT）
+    Args:
+        width (int): Original width
+        height (int): Original height
+        max_width (int): Maximum allowed width (default: MAX_WIDTH)
+        max_height (int): Maximum allowed height (default: MAX_HEIGHT)
 
-    戻り値:
-        tuple: (縮小後の幅, 縮小後の高さ) または 縮小不要な場合はNone
+    Returns:
+        tuple: (scaled_width, scaled_height) or None if scaling not needed
     """
-    # デフォルト値を設定
+    # Set default values
     if max_width is None:
         max_width = MAX_WIDTH
     if max_height is None:
         max_height = MAX_HEIGHT
-    # 縮小が必要か確認
+
+    # Check if scaling is needed
     if width <= max_width and height <= max_height:
         return None
 
-    # 縮小比率を計算
+    # Calculate scaling ratios
     width_ratio = max_width / width
     height_ratio = max_height / height
 
-    # 両方の制約に収まる小さい比率を使用
+    # Use smaller ratio to fit within both constraints
     scale_ratio = min(width_ratio, height_ratio)
 
-    # 新しい寸法を計算（エンコード品質向上のため偶数にする）
+    # Calculate new dimensions (make even for better encoding quality)
     scaled_width = max(2, int(width * scale_ratio) // 2 * 2)
     scaled_height = max(2, int(height * scale_ratio) // 2 * 2)
 
     return (scaled_width, scaled_height)
 
 
-def compress_video(input_path, output_path=None, crf=None, audio_bitrate=None):
+def parse_bitrate(bitrate_str):
     """
-    FFmpegとAV1コーデックを使用して動画を圧縮
+    Parse bitrate string to kbps integer.
 
-    引数:
-        input_path (str): 入力動画ファイルのパス
-        output_path (str): 出力動画ファイルのパス（オプション）
-        crf (int): AV1のCRF値（デフォルト: DEFAULT_CRF）
-        audio_bitrate (str): 音声ビットレート（デフォルト: DEFAULT_AUDIO_BITRATE）
+    Args:
+        bitrate_str (str): Bitrate string (e.g., "192k", "320k")
+
+    Returns:
+        int: Bitrate in kbps
     """
-    # デフォルト値を設定
+    bitrate_str = bitrate_str.lower().strip()
+    if bitrate_str.endswith("k"):
+        return int(bitrate_str[:-1])
+    elif bitrate_str.endswith("m"):
+        return int(float(bitrate_str[:-1]) * 1000)
+    else:
+        return int(bitrate_str)
+
+
+def update_progress(line, total_duration):
+    """
+    Parse progress from FFmpeg log and display progress bar.
+
+    Args:
+        line (str): FFmpeg output line
+        total_duration (float): Total video duration in seconds
+    """
+    # Parse time= pattern (e.g., time=00:00:02.33 or time=N/A)
+    time_match = re.search(r"time=(\d+):(\d+):(\d+\.?\d*)", line)
+
+    if time_match and total_duration > 0:
+        hours = int(time_match.group(1))
+        minutes = int(time_match.group(2))
+        seconds = float(time_match.group(3))
+        current_time = hours * 3600 + minutes * 60 + seconds
+
+        # Calculate progress percentage (maximum 100%)
+        progress = min(100, (current_time / total_duration) * 100)
+
+        # Extract fps
+        fps_match = re.search(r"fps=\s*([\d.]+)", line)
+        fps = fps_match.group(1) if fps_match else "0"
+
+        # Extract speed
+        speed_match = re.search(r"speed=\s*([\d.]+)x", line)
+        speed = speed_match.group(1) if speed_match else "0"
+
+        # Extract elapsed time and calculate estimated remaining time
+        elapsed_match = re.search(r"elapsed=(\d+):(\d+):(\d+\.?\d*)", line)
+        eta_str = "--:--"
+        if elapsed_match and progress > 0:
+            elapsed_hours = int(elapsed_match.group(1))
+            elapsed_minutes = int(elapsed_match.group(2))
+            elapsed_seconds = float(elapsed_match.group(3))
+            elapsed_time = elapsed_hours * 3600 + elapsed_minutes * 60 + elapsed_seconds
+
+            # Estimated remaining time = elapsed time * (remaining progress / current progress)
+            if progress < 100:
+                remaining_progress = 100 - progress
+                eta_seconds = elapsed_time * (remaining_progress / progress)
+                eta_str = format_time(eta_seconds)
+            else:
+                eta_str = "00:00.0"
+
+        # Display progress bar
+        filled = int(PROGRESS_BAR_LENGTH * progress / 100)
+        bar = "█" * filled + "░" * (PROGRESS_BAR_LENGTH - filled)
+
+        # Format current time
+        current_min = int(current_time // 60)
+        current_sec = current_time % 60
+        total_min = int(total_duration // 60)
+        total_sec = total_duration % 60
+
+        # Extract frame count
+        frame_match = re.search(r"frame=\s*(\d+)", line)
+        frame = frame_match.group(1) if frame_match else "0"
+
+        # Update the same line (return to beginning of line with \r)
+        sys.stdout.write(
+            f"\r  [{bar}] {progress:5.1f}% | "
+            f"{current_min:02d}:{current_sec:04.1f}/{total_min:02d}:{total_sec:04.1f} | "
+            f"ETA {eta_str} | {fps} fps | {speed}x | Frame: {frame}"
+        )
+        sys.stdout.flush()
+        return True
+    return False
+
+
+def compress_video(
+    input_path,
+    output_path=None,
+    crf=None,
+    audio_bitrate=None,
+    audio_enabled=True,
+    max_fps=None,
+    resolution=None,
+    ffmpeg_path="ffmpeg",
+    ffprobe_path="ffprobe",
+):
+    """
+    Compress video using FFmpeg with AV1 codec.
+
+    Args:
+        input_path (str): Input video file path
+        output_path (str): Output video file path (optional)
+        crf (int): AV1 CRF value (default: DEFAULT_CRF)
+        audio_bitrate (str): Audio bitrate (default: DEFAULT_AUDIO_BITRATE)
+        audio_enabled (bool): Whether to include audio (default: True)
+        max_fps (int): Maximum FPS (default: None = keep original)
+        resolution (str): Custom resolution in WxH format (default: None)
+        ffmpeg_path (str): Path to ffmpeg executable
+        ffprobe_path (str): Path to ffprobe executable
+    """
+    # Set default values
     if crf is None:
         crf = DEFAULT_CRF
     if audio_bitrate is None:
         audio_bitrate = DEFAULT_AUDIO_BITRATE
     input_path = Path(input_path)
 
-    # 入力ファイルを検証
+    # Validate input file
     if not input_path.exists():
-        print(f"エラー: 入力ファイル '{input_path}' が存在しません。")
+        print(f"Error: Input file '{input_path}' does not exist.")
         sys.exit(1)
 
-    # デフォルトの出力パスを設定
+    # Set default output path
     if output_path is None:
         output_path = (
             input_path.parent / f"{input_path.stem}_compressed{input_path.suffix}"
@@ -135,33 +326,77 @@ def compress_video(input_path, output_path=None, crf=None, audio_bitrate=None):
     else:
         output_path = Path(output_path)
 
-    # 動画情報を取得
-    print(f"動画を分析中: {input_path}")
-    video_info = get_video_info(input_path)
+    # Get video information
+    print(f"Analyzing video: {input_path}")
+    video_info = get_video_info(input_path, ffprobe_path)
 
     if not video_info:
-        print("エラー: 動画情報を取得できませんでした。")
+        print("Error: Could not retrieve video information.")
         sys.exit(1)
 
     original_width = video_info["width"]
     original_height = video_info["height"]
-    print(f"元の解像度: {original_width}x{original_height}")
+    original_fps = video_info["fps"]
+    total_duration = video_info["duration"] or 0
 
-    # 必要に応じて縮小後の解像度を計算
-    scaled_res = calculate_scaled_resolution(original_width, original_height)
+    print(f"Original resolution: {original_width}x{original_height}")
+    if original_fps:
+        print(f"Original FPS: {original_fps:.2f}")
+    if total_duration:
+        print(f"Duration: {format_time(total_duration)}")
 
-    # ffmpegコマンドを構築
-    cmd = ["ffmpeg", "-i", str(input_path), "-y"]  # -yで出力を上書き
+    # Parse custom resolution if provided
+    custom_max_width = None
+    custom_max_height = None
+    if resolution:
+        try:
+            res_parts = resolution.lower().split("x")
+            if len(res_parts) == 2:
+                custom_max_width = int(res_parts[0])
+                custom_max_height = int(res_parts[1])
+                print(
+                    f"Custom resolution limit: {custom_max_width}x{custom_max_height}"
+                )
+        except ValueError:
+            print(f"Warning: Invalid resolution format '{resolution}', using defaults")
 
-    # 必要に応じて動画スケーリングフィルタを追加
+    # Calculate scaled resolution if needed
+    scaled_res = calculate_scaled_resolution(
+        original_width, original_height, custom_max_width, custom_max_height
+    )
+
+    # Build ffmpeg command
+    cmd = [ffmpeg_path, "-i", str(input_path), "-y"]  # -y to overwrite output
+
+    # Build video filter chain
+    video_filters = []
+
+    # Add scaling filter if needed
     if scaled_res:
         scaled_width, scaled_height = scaled_res
-        print(f"アスペクト比を維持して {scaled_width}x{scaled_height} に縮小中")
-        cmd.extend(["-vf", f"scale={scaled_width}:{scaled_height}"])
+        print(
+            f"Scaling to {scaled_width}x{scaled_height} while maintaining aspect ratio"
+        )
+        video_filters.append(f"scale={scaled_width}:{scaled_height}")
     else:
-        print("縮小は不要です（解像度が既に2K以下）")
+        print("No scaling needed (resolution within limits)")
 
-    # ビデオコーデック設定
+    # Add FPS filter if needed
+    fps_filter = None
+    if max_fps is not None and original_fps and original_fps > max_fps:
+        print(f"Limiting FPS from {original_fps:.2f} to {max_fps}")
+        fps_filter = f"fps={max_fps}"
+        video_filters.append(fps_filter)
+    elif max_fps is not None:
+        print(
+            f"FPS limit: {max_fps} (original: {original_fps:.2f if original_fps else 'unknown'})"
+        )
+
+    # Apply video filters if any
+    if video_filters:
+        cmd.extend(["-vf", ",".join(video_filters)])
+
+    # Video codec settings
     cmd.extend(
         [
             "-c:v",
@@ -169,71 +404,95 @@ def compress_video(input_path, output_path=None, crf=None, audio_bitrate=None):
             "-crf",
             str(crf),
             "-b:v",
-            "0",  # ビットレートベースのエンコーディングを無効化（CRFモード）
+            "0",  # Disable bitrate-based encoding (CRF mode)
             "-preset",
             str(VIDEO_PRESET),
         ]
     )
 
-    # オーディオコーデック設定
-    cmd.extend(
-        [
-            "-c:a",
-            AUDIO_CODEC,
-            "-b:a",
-            audio_bitrate,
-        ]
-    )
+    # Audio codec settings
+    if audio_enabled:
+        # Validate and cap audio bitrate
+        bitrate_kbps = parse_bitrate(audio_bitrate)
+        if bitrate_kbps > MAX_AUDIO_BITRATE:
+            print(
+                f"Warning: Audio bitrate capped to {MAX_AUDIO_BITRATE}k (requested: {audio_bitrate})"
+            )
+            audio_bitrate = f"{MAX_AUDIO_BITRATE}k"
 
-    # 出力ファイル
+        cmd.extend(
+            [
+                "-c:a",
+                AUDIO_CODEC,
+                "-b:a",
+                audio_bitrate,
+            ]
+        )
+        print(f"Audio: {AUDIO_CODEC} @ {audio_bitrate}")
+    else:
+        cmd.extend(["-an"])  # No audio
+        print("Audio: Disabled")
+
+    # Output file
     cmd.append(str(output_path))
 
-    # 参考用にコマンドを表示
-    print(f"\nFFmpegコマンド: {' '.join(cmd)}\n")
-    print("圧縮を開始します...")
+    # Display command for reference
+    print(f"\nFFmpeg command: {' '.join(cmd)}\n")
+    print("Starting compression...")
+    print("-" * 60)
 
-    # ffmpegコマンドを実行
+    # Execute ffmpeg command
     process = None
     try:
         process = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            stdin=subprocess.DEVNULL,  # stdinを閉じてブロックを防止
+            stdin=subprocess.DEVNULL,  # Close stdin to prevent blocking
             encoding="utf-8",
             errors="replace",
         )
 
-        # リアルタイムで進捗を表示
+        # Display progress in real-time
         if process.stdout:
             for line in process.stdout:
-                print(line, end="")
+                # Try to parse and display progress
+                if not update_progress(line, total_duration):
+                    # Only show non-progress lines that are errors or important info
+                    line_stripped = line.strip()
+                    if line_stripped and (
+                        "error" in line_stripped.lower()
+                        or "warning" in line_stripped.lower()
+                    ):
+                        print(f"\n  {line_stripped}")
 
         process.wait()
+        print()  # New line after progress bar
 
         if process.returncode == 0:
-            print("\n✓ 圧縮が正常に完了しました！")
-            print(f"  出力: {output_path}")
+            print("-" * 60)
+            print("✓ Compression completed successfully!")
+            print(f"  Output: {output_path}")
 
-            # 出力ファイルサイズを取得
+            # Get output file size
             output_size = output_path.stat().st_size / (1024 * 1024)  # MB
             input_size = input_path.stat().st_size / (1024 * 1024)  # MB
             compression_ratio = (1 - output_size / input_size) * 100
 
-            print(f"  入力サイズ: {input_size:.2f} MB")
-            print(f"  出力サイズ: {output_size:.2f} MB")
-            print(f"  圧縮率: {compression_ratio:.1f}% 削減")
+            print(f"  Input size: {input_size:.2f} MB")
+            print(f"  Output size: {output_size:.2f} MB")
+            print(f"  Compression: {compression_ratio:.1f}% reduction")
         else:
-            print(f"\n✗ 圧縮に失敗しました（リターンコード: {process.returncode}）")
+            print(f"\n✗ Compression failed (return code: {process.returncode})")
             sys.exit(1)
 
     except FileNotFoundError:
         print(
-            "エラー: FFmpegが見つかりません。FFmpegがインストールされ、PATHに追加されていることを確認してください。"
+            "Error: FFmpeg not found. Please ensure FFmpeg is installed and added to PATH."
         )
         sys.exit(1)
     except KeyboardInterrupt:
-        print("\n\nユーザーによって圧縮が中断されました。")
+        print("\n\nCompression interrupted by user.")
         if process is not None:
             process.terminate()
         sys.exit(1)
@@ -241,58 +500,95 @@ def compress_video(input_path, output_path=None, crf=None, audio_bitrate=None):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="FFmpegとAV1コーデックを使用して動画を圧縮",
+        description="Compress video using FFmpeg with AV1 codec",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-使用例:
+Examples:
   %(prog)s input.mp4
   %(prog)s input.mp4 -o output.mp4
   %(prog)s input.mp4 --crf 23 --audio-bitrate 256k
+  %(prog)s input.mp4 --resolution 1920x1080 --fps 60
+  %(prog)s input.mp4 --no-audio
+  %(prog)s input.mp4 --fps 30 --crf 28
         """,
     )
 
-    parser.add_argument("input", nargs="?", help="入力動画ファイルのパス")
+    parser.add_argument("input", nargs="?", help="Input video file path")
     parser.add_argument(
         "-o",
         "--output",
-        help="出力動画ファイルのパス（デフォルト: input_compressed.ext）",
+        help="Output video file path (default: input_compressed.ext)",
     )
     parser.add_argument(
         "--crf",
         type=int,
         default=DEFAULT_CRF,
-        help=f"AV1 CRF値（{CRF_MIN}-{CRF_MAX}、低いほど高品質、高いほど小サイズ、デフォルト: {DEFAULT_CRF}）",
+        help=f"AV1 CRF value ({CRF_MIN}-{CRF_MAX}, lower = higher quality, higher = smaller size, default: {DEFAULT_CRF})",
     )
     parser.add_argument(
         "--audio-bitrate",
         default=DEFAULT_AUDIO_BITRATE,
-        help=f"音声ビットレート（デフォルト: {DEFAULT_AUDIO_BITRATE}）",
+        help=f"Audio bitrate (default: {DEFAULT_AUDIO_BITRATE}, max: {MAX_AUDIO_BITRATE}k)",
+    )
+    parser.add_argument(
+        "--no-audio",
+        action="store_true",
+        help="Disable audio track (audio bitrate option will be ignored)",
+    )
+    parser.add_argument(
+        "--fps",
+        type=int,
+        default=None,
+        help=f"Maximum FPS (default: keep original, max: {MAX_FPS})",
+    )
+    parser.add_argument(
+        "--resolution",
+        type=str,
+        default=None,
+        help="Maximum resolution in WxH format (e.g., 1920x1080, default: 3840x2160)",
     )
 
     args = parser.parse_args()
 
-    # 入力ファイルパスを取得（引数がない場合はコンソールで入力）
+    # Get FFmpeg executable paths
+    ffmpeg_path, ffprobe_path = get_ffmpeg_executables()
+
+    # Get input file path (prompt if not provided)
     input_path = args.input
     if input_path is None:
-        input_path = input("圧縮する動画ファイルのパスを入力してください: ").strip()
+        input_path = input("Enter the path to the video file to compress: ").strip()
         if not input_path:
-            print("エラー: 入力ファイルのパスが指定されていません。")
+            print("Error: Input file path not specified.")
             sys.exit(1)
 
-    # 先頭と末尾のダブルクォートを削除
+    # Remove surrounding double quotes
     input_path = input_path.strip('"')
 
-    # CRF値を検証
+    # Validate CRF value
     if not CRF_MIN <= args.crf <= CRF_MAX:
-        print(f"エラー: CRFは{CRF_MIN}から{CRF_MAX}の間でなければなりません")
+        print(f"Error: CRF must be between {CRF_MIN} and {CRF_MAX}")
         sys.exit(1)
 
-    # 圧縮を実行
+    # Validate FPS value
+    max_fps = args.fps
+    if max_fps is not None and max_fps > MAX_FPS:
+        print(f"Warning: FPS capped to {MAX_FPS} (requested: {max_fps})")
+        max_fps = MAX_FPS
+
+    # Determine audio settings
+    audio_enabled = not args.no_audio
+
+    # Run compression
     compress_video(
         input_path=input_path,
         output_path=args.output,
         crf=args.crf,
         audio_bitrate=args.audio_bitrate,
+        audio_enabled=audio_enabled,
+        max_fps=max_fps,
+        resolution=args.resolution,
+        ffmpeg_path=ffmpeg_path,
+        ffprobe_path=ffprobe_path,
     )
 
 
