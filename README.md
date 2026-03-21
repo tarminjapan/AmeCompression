@@ -1,8 +1,10 @@
-# Video Compression Script
+# Video/Audio Compression Script
 
-A Python script for video compression using FFmpeg with SVT-AV1 codec.
+A Python script for video and audio compression using FFmpeg with SVT-AV1 codec (video) and MP3 codec (audio).
 
 ## Features
+
+### Video Compression
 
 - **Maximum Resolution**: 4K (3840x2160)
 - **Codec**: SVT-AV1 (fast AV1 codec)
@@ -10,6 +12,16 @@ A Python script for video compression using FFmpeg with SVT-AV1 codec.
 - **Audio Codec**: AAC
 - **Audio Bitrate**: Maximum 320kbps
 - **Maximum FPS**: 120fps
+
+### Audio Compression (MP3)
+
+- **Supported Formats**: MP3, WAV, FLAC, AAC, M4A, OGG, WMA, APE, ALAC
+- **Codec**: libmp3lame (LAME MP3 encoder)
+- **Bitrate**: 32k - 320kbps
+- **Metadata**: Preserves original metadata (title, artist, etc.)
+
+### Common Features
+
 - **Progress Display**: Real-time progress bar with ETA, FPS, and speed indicators
 
 ## Prerequisites
@@ -63,13 +75,23 @@ The script will automatically detect and use local executables if they exist.
 
 ## Usage
 
-### Basic Usage
+### Basic Video Compression
 
 ```bash
 python compress_video.py input_video.mp4
 ```
 
 The output file will be automatically created as `input_video_compressed.mp4`.
+
+### Basic Audio Compression (to MP3)
+
+```bash
+python compress_video.py music.mp3 --audio-bitrate 128k
+```
+
+The output file will be automatically created as `music_compressed.mp3`.
+
+Supported audio formats: `.mp3`, `.wav`, `.flac`, `.aac`, `.m4a`, `.ogg`, `.wma`, `.ape`, `.alac`
 
 ### Interactive Mode (No Input File Specified)
 
@@ -102,10 +124,23 @@ python compress_video.py input_video.mp4 --crf 23
 - CRF 26-40: Medium quality
 - CRF 40-63: Low quality (smaller file size)
 
-### Change Audio Bitrate
+### Change Audio Bitrate (Video)
 
 ```bash
 python compress_video.py input_video.mp4 --audio-bitrate 256k
+```
+
+### Audio Compression Examples
+
+```bash
+# Compress MP3 to 128kbps
+python compress_video.py music.mp3 --audio-bitrate 128k
+
+# Convert WAV to MP3
+python compress_video.py audio.wav --audio-bitrate 192k
+
+# Convert FLAC to MP3 with custom output
+python compress_video.py song.flac -o compressed.mp3
 ```
 
 ### Disable Audio
@@ -136,13 +171,13 @@ python compress_video.py input_video.mp4 -o output_video.mp4 --crf 23 --audio-bi
 
 | Option | Description | Default |
 | - | - | - |
-| `input` | Input video file path (optional, will prompt if not provided) | - |
-| `-o`, `--output` | Output video file path | `{input_filename}_compressed.{extension}` |
-| `--crf` | AV1 CRF value (0-63) | 25 |
-| `--audio-bitrate` | Audio bitrate (max: 320k) | 192k |
-| `--no-audio` | Disable audio track | Audio enabled |
-| `--fps` | Maximum FPS (max: 120) | Original FPS |
-| `--resolution` | Maximum resolution in WxH format (e.g., 1920x1080) | 3840x2160 |
+| `input` | Input video/audio file path (optional, will prompt if not provided) | - |
+| `-o`, `--output` | Output file path | Video: `{input_filename}_compressed.{extension}`, Audio: `{input_filename}_compressed.mp3` |
+| `--crf` | AV1 CRF value (0-63, video only) | 25 |
+| `--audio-bitrate` | Audio bitrate (video: max 320k, audio: 32k-320k) | 192k |
+| `--no-audio` | Disable audio track (video only) | Audio enabled |
+| `--fps` | Maximum FPS (max: 120, video only) | Original FPS |
+| `--resolution` | Maximum resolution in WxH format (e.g., 1920x1080, video only) | 3840x2160 |
 
 ## Help
 
@@ -172,11 +207,19 @@ python compress_video.py --help
 - CRF mode encoding (quality-based variable bitrate)
 - Automatic multi-threading support
 
-### Audio Processing
+### Audio Processing (Video)
 
 - Converted to AAC format
 - Maximum 320kbps bitrate
 - Can be disabled with `--no-audio`
+
+### Audio Compression (Audio Files)
+
+- Converts various audio formats to MP3
+- Uses libmp3lame encoder (high quality MP3)
+- Bitrate range: 32k - 320kbps
+- Preserves metadata (title, artist, album, etc.)
+- Automatic file type detection based on extension
 
 ### Progress Display
 
@@ -223,6 +266,19 @@ python compress_video.py video.mp4 --crf 35 --audio-bitrate 128k
 python compress_video.py video.mp4 --no-audio
 ```
 
+### Audio Compression Examples
+
+```bash
+# Compress high-bitrate MP3
+python compress_video.py high_quality.mp3 --audio-bitrate 128k
+
+# Convert lossless FLAC to MP3
+python compress_video.py lossless.flac --audio-bitrate 320k
+
+# Convert WAV to MP3
+python compress_video.py recording.wav --audio-bitrate 192k
+```
+
 ## Notes
 
 - AV1 encoding is CPU-intensive; high-resolution videos may take longer to process
@@ -238,11 +294,17 @@ python compress_video.py video.mp4 --no-audio
 - Alternatively, place `ffmpeg` and `ffprobe` executables in the script directory
 - Verify by running `ffmpeg -version` in the command line
 
-### Video Info Retrieval Error
+### Video/Audio Info Retrieval Error
 
 - Verify that the input file exists
 - Check if the file is corrupted
-- Ensure the file is a valid video format
+- Ensure the file is a valid video or audio format
+
+### Unsupported File Type Error
+
+- Check the file extension
+- Supported video formats: `.mp4`, `.mkv`, `.avi`, `.mov`, `.wmv`, `.flv`, `.webm`, `.m4v`, `.ts`, `.mts`, `.m2ts`
+- Supported audio formats: `.mp3`, `.wav`, `.flac`, `.aac`, `.m4a`, `.ogg`, `.wma`, `.ape`, `.alac`
 
 ### Progress Bar Not Displaying
 

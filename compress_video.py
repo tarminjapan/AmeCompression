@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 """
-Video Compression Script using FFmpeg
-- Maximum resolution: 4K (3840x2160)
-- Codec: SVT-AV1 (fast AV1 codec, CRF 25)
-- Audio: AAC (maximum 320kbps)
-- Maximum FPS: 120
+Video/Audio Compression Script using FFmpeg
+- Video: Maximum resolution 4K (3840x2160), SVT-AV1 codec (CRF 25), max 120 FPS
+- Audio: AAC for video (max 320kbps), MP3 for audio files (max 320kbps)
 """
 
 import argparse
@@ -29,11 +27,43 @@ VIDEO_PRESET = 6  # Encoding speed preset (0-13, higher = faster)
 DEFAULT_FPS = None  # Default FPS (None = keep original)
 MAX_FPS = 120  # Maximum FPS
 
-# Audio codec settings
+# Audio codec settings (for video)
 AUDIO_CODEC = "aac"  # Audio codec (AAC)
 DEFAULT_AUDIO_BITRATE = "192k"  # Default audio bitrate
 MAX_AUDIO_BITRATE = 320  # Maximum audio bitrate in kbps
 DEFAULT_AUDIO_ENABLED = True  # Audio enabled by default
+
+# MP3 codec settings (for audio-only files)
+MP3_CODEC = "libmp3lame"  # MP3 encoder
+DEFAULT_MP3_BITRATE = "192k"  # Default MP3 bitrate
+MP3_BITRATE_MIN = 32  # Minimum MP3 bitrate in kbps
+MP3_BITRATE_MAX = 320  # Maximum MP3 bitrate in kbps
+
+# Supported file extensions
+VIDEO_EXTENSIONS = {
+    ".mp4",
+    ".mkv",
+    ".avi",
+    ".mov",
+    ".wmv",
+    ".flv",
+    ".webm",
+    ".m4v",
+    ".ts",
+    ".mts",
+    ".m2ts",
+}
+AUDIO_EXTENSIONS = {
+    ".mp3",
+    ".wav",
+    ".flac",
+    ".aac",
+    ".m4a",
+    ".ogg",
+    ".wma",
+    ".ape",
+    ".alac",
+}
 
 # CRF value range
 CRF_MIN = 0
@@ -85,6 +115,24 @@ def format_time(seconds):
     minutes = int(seconds // 60)
     secs = seconds % 60
     return f"{minutes:02d}:{secs:04.1f}"
+
+
+def get_file_type(file_path):
+    """
+    Determine file type based on extension.
+
+    Args:
+        file_path (str or Path): Path to file
+
+    Returns:
+        str: "video", "audio", or "unknown"
+    """
+    ext = Path(file_path).suffix.lower()
+    if ext in VIDEO_EXTENSIONS:
+        return "video"
+    elif ext in AUDIO_EXTENSIONS:
+        return "audio"
+    return "unknown"
 
 
 def get_video_info(video_path, ffprobe_path="ffprobe"):
@@ -339,6 +387,258 @@ def show_final_progress(total_duration):
     sys.stdout.flush()
 
 
+def get_audio_info(audio_path, ffprobe_path="ffprobe"):
+    """
+    Get audio information using ffprobe.
+
+    Args:
+        audio_path (str): Path to audio file
+        ffprobe_path (str): Path to ffprobe executable
+
+    Returns:
+        dict: Audio duration, bitrate, sample_rate, channels
+    """
+    cmd = [
+        ffprobe_path,
+        "-v",
+        "error",
+        "-select_streams",
+        "a:0",
+        "-show_entries",
+        "stream=bit_rate,sample_rate,channels,duration",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "csv=p=0",
+        str(audio_path),
+    ]
+
+    duration = None
+    bitrate = None
+    sample_rate = None
+    channels = None
+
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        output = result.stdout.strip()
+        if output:
+            lines = output.split("\n")
+            for line in lines:
+                parts = line.split(",")
+                if len(parts) >= 4:
+                    # Stream info: bit_rate, sample_rate, channels, duration
+                    try:
+                        if parts[0]:
+                            bitrate = int(parts[0])
+                        if parts[1]:
+                            sample_rate = int(parts[1])
+                        if parts[2]:
+                            channels = int(parts[2])
+                        if parts[3]:
+                            duration = float(parts[3])
+                    except ValueError:
+                        pass
+                elif len(parts) == 1 and parts[0]:
+                    # Format duration (fallback)
+                    try:
+                        duration = float(parts[0])
+                    except ValueError:
+                        pass
+    except subprocess.CalledProcessError as e:
+        print(f"Error getting audio info: {e.stderr}")
+        sys.exit(1)
+
+    # If duration not found, try format-level duration
+    if duration is None:
+        format_cmd = [
+            ffprobe_path,
+            "-v",
+            "error",
+            "-show_entries",
+            "format=duration",
+            "-of",
+            "csv=p=0",
+            str(audio_path),
+        ]
+        try:
+            format_result = subprocess.run(
+                format_cmd, capture_output=True, text=True, check=True
+            )
+            format_output = format_result.stdout.strip()
+            if format_output:
+                try:
+                    duration = float(format_output)
+                except ValueError:
+                    pass
+        except subprocess.CalledProcessError:
+            pass
+
+    return {
+        "duration": duration,
+        "bitrate": bitrate,
+        "sample_rate": sample_rate,
+        "channels": channels,
+    }
+
+
+def compress_audio(
+    input_path,
+    output_path=None,
+    bitrate=None,
+    ffmpeg_path="ffmpeg",
+    ffprobe_path="ffprobe",
+):
+    """
+    Compress audio file to MP3 using FFmpeg.
+
+    Args:
+        input_path (str): Input audio file path
+        output_path (str): Output audio file path (optional)
+        bitrate (str): MP3 bitrate (default: DEFAULT_MP3_BITRATE)
+        ffmpeg_path (str): Path to ffmpeg executable
+        ffprobe_path (str): Path to ffprobe executable
+    """
+    # Set default values
+    if bitrate is None:
+        bitrate = DEFAULT_MP3_BITRATE
+    input_path = Path(input_path)
+
+    # Validate input file
+    if not input_path.exists():
+        print(f"Error: Input file '{input_path}' does not exist.")
+        sys.exit(1)
+
+    # Set default output path (always .mp3)
+    if output_path is None:
+        output_path = input_path.parent / f"{input_path.stem}_compressed.mp3"
+    else:
+        output_path = Path(output_path)
+        # Ensure output is .mp3
+        if output_path.suffix.lower() != ".mp3":
+            output_path = output_path.with_suffix(".mp3")
+
+    # Get audio information
+    print(f"Analyzing audio: {input_path}")
+    audio_info = get_audio_info(input_path, ffprobe_path)
+
+    total_duration = audio_info["duration"] or 0
+    original_bitrate = audio_info["bitrate"]
+    sample_rate = audio_info["sample_rate"]
+    channels = audio_info["channels"]
+
+    if original_bitrate:
+        print(f"Original bitrate: {original_bitrate // 1000} kbps")
+    if sample_rate:
+        print(f"Sample rate: {sample_rate} Hz")
+    if channels:
+        channel_str = (
+            "Mono"
+            if channels == 1
+            else "Stereo"
+            if channels == 2
+            else f"{channels} channels"
+        )
+        print(f"Channels: {channel_str}")
+    if total_duration:
+        print(f"Duration: {format_time(total_duration)}")
+
+    # Validate and cap bitrate
+    bitrate_kbps = parse_bitrate(bitrate)
+    if bitrate_kbps < MP3_BITRATE_MIN:
+        print(
+            f"Warning: Bitrate adjusted to minimum {MP3_BITRATE_MIN}k (requested: {bitrate})"
+        )
+        bitrate = f"{MP3_BITRATE_MIN}k"
+    elif bitrate_kbps > MP3_BITRATE_MAX:
+        print(f"Warning: Bitrate capped to {MP3_BITRATE_MAX}k (requested: {bitrate})")
+        bitrate = f"{MP3_BITRATE_MAX}k"
+
+    # Build ffmpeg command
+    cmd = [ffmpeg_path, "-i", str(input_path), "-y"]  # -y to overwrite output
+
+    # MP3 codec settings
+    cmd.extend(
+        [
+            "-c:a",
+            MP3_CODEC,
+            "-b:a",
+            bitrate,
+            "-map_metadata",
+            "0",  # Preserve metadata
+        ]
+    )
+
+    # Output file
+    cmd.append(str(output_path))
+
+    # Display command for reference
+    print(f"\nFFmpeg command: {' '.join(cmd)}\n")
+    print("Starting MP3 compression...")
+    print("-" * 60)
+
+    # Execute ffmpeg command
+    process = None
+    stats = {"fps_list": [], "speed_list": [], "frame_list": []}
+
+    try:
+        process = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            stdin=subprocess.DEVNULL,
+            encoding="utf-8",
+            errors="replace",
+        )
+
+        # Display progress in real-time
+        if process.stdout:
+            for line in process.stdout:
+                # Try to parse and display progress
+                if not update_progress(line, total_duration, stats):
+                    # Only show non-progress lines that are errors or important info
+                    line_stripped = line.strip()
+                    if line_stripped and (
+                        "error" in line_stripped.lower()
+                        or "warning" in line_stripped.lower()
+                    ):
+                        print(f"\n  {line_stripped}")
+
+        process.wait()
+
+        if process.returncode == 0:
+            # Show 100% progress bar
+            if total_duration > 0:
+                show_final_progress(total_duration)
+            print()  # New line after progress bar
+            print("-" * 60)
+            print("✓ MP3 compression completed successfully!")
+            print(f"  Output: {output_path}")
+
+            # Get output file size
+            output_size = output_path.stat().st_size / (1024 * 1024)  # MB
+            input_size = input_path.stat().st_size / (1024 * 1024)  # MB
+            compression_ratio = (1 - output_size / input_size) * 100
+
+            print(f"  Input size: {input_size:.2f} MB")
+            print(f"  Output size: {output_size:.2f} MB")
+            print(f"  Compression: {compression_ratio:.1f}% reduction")
+            print(f"  MP3 bitrate: {bitrate}")
+        else:
+            print(f"\n✗ Compression failed (return code: {process.returncode})")
+            sys.exit(1)
+
+    except FileNotFoundError:
+        print(
+            "Error: FFmpeg not found. Please ensure FFmpeg is installed and added to PATH."
+        )
+        sys.exit(1)
+    except KeyboardInterrupt:
+        print("\n\nCompression interrupted by user.")
+        if process is not None:
+            process.terminate()
+        sys.exit(1)
+
+
 def compress_video(
     input_path,
     output_path=None,
@@ -572,16 +872,21 @@ def compress_video(
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Compress video using FFmpeg with AV1 codec",
+        description="Compress video/audio using FFmpeg (AV1 for video, MP3 for audio)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
+  # Video compression
   %(prog)s input.mp4
   %(prog)s input.mp4 -o output.mp4
   %(prog)s input.mp4 --crf 23 --audio-bitrate 256k
   %(prog)s input.mp4 --resolution 1920x1080 --fps 60
   %(prog)s input.mp4 --no-audio
-  %(prog)s input.mp4 --fps 30 --crf 28
+
+  # Audio compression (to MP3)
+  %(prog)s music.mp3 --audio-bitrate 128k
+  %(prog)s audio.wav --audio-bitrate 192k
+  %(prog)s song.flac -o compressed.mp3
         """,
     )
 
@@ -600,7 +905,7 @@ Examples:
     parser.add_argument(
         "--audio-bitrate",
         default=DEFAULT_AUDIO_BITRATE,
-        help=f"Audio bitrate (default: {DEFAULT_AUDIO_BITRATE}, max: {MAX_AUDIO_BITRATE}k)",
+        help=f"Audio bitrate (video: default {DEFAULT_AUDIO_BITRATE}, max {MAX_AUDIO_BITRATE}k | audio/MP3: {MP3_BITRATE_MIN}k-{MP3_BITRATE_MAX}k)",
     )
     parser.add_argument(
         "--no-audio",
@@ -628,7 +933,7 @@ Examples:
     # Get input file path (prompt if not provided)
     input_path = args.input
     if input_path is None:
-        input_path = input("Enter the path to the video file to compress: ").strip()
+        input_path = input("Enter the path to the file to compress: ").strip()
         if not input_path:
             print("Error: Input file path not specified.")
             sys.exit(1)
@@ -636,32 +941,51 @@ Examples:
     # Remove surrounding double quotes
     input_path = input_path.strip('"')
 
-    # Validate CRF value
-    if not CRF_MIN <= args.crf <= CRF_MAX:
-        print(f"Error: CRF must be between {CRF_MIN} and {CRF_MAX}")
+    # Determine file type
+    file_type = get_file_type(input_path)
+
+    if file_type == "audio":
+        # Audio file compression (to MP3)
+        compress_audio(
+            input_path=input_path,
+            output_path=args.output,
+            bitrate=args.audio_bitrate,
+            ffmpeg_path=ffmpeg_path,
+            ffprobe_path=ffprobe_path,
+        )
+    elif file_type == "video":
+        # Video file compression
+        # Validate CRF value
+        if not CRF_MIN <= args.crf <= CRF_MAX:
+            print(f"Error: CRF must be between {CRF_MIN} and {CRF_MAX}")
+            sys.exit(1)
+
+        # Validate FPS value
+        max_fps = args.fps
+        if max_fps is not None and max_fps > MAX_FPS:
+            print(f"Warning: FPS capped to {MAX_FPS} (requested: {max_fps})")
+            max_fps = MAX_FPS
+
+        # Determine audio settings
+        audio_enabled = not args.no_audio
+
+        # Run compression
+        compress_video(
+            input_path=input_path,
+            output_path=args.output,
+            crf=args.crf,
+            audio_bitrate=args.audio_bitrate,
+            audio_enabled=audio_enabled,
+            max_fps=max_fps,
+            resolution=args.resolution,
+            ffmpeg_path=ffmpeg_path,
+            ffprobe_path=ffprobe_path,
+        )
+    else:
+        print(f"Error: Unsupported file type. Supported formats:")
+        print(f"  Video: {', '.join(sorted(VIDEO_EXTENSIONS))}")
+        print(f"  Audio: {', '.join(sorted(AUDIO_EXTENSIONS))}")
         sys.exit(1)
-
-    # Validate FPS value
-    max_fps = args.fps
-    if max_fps is not None and max_fps > MAX_FPS:
-        print(f"Warning: FPS capped to {MAX_FPS} (requested: {max_fps})")
-        max_fps = MAX_FPS
-
-    # Determine audio settings
-    audio_enabled = not args.no_audio
-
-    # Run compression
-    compress_video(
-        input_path=input_path,
-        output_path=args.output,
-        crf=args.crf,
-        audio_bitrate=args.audio_bitrate,
-        audio_enabled=audio_enabled,
-        max_fps=max_fps,
-        resolution=args.resolution,
-        ffmpeg_path=ffmpeg_path,
-        ffprobe_path=ffprobe_path,
-    )
 
 
 if __name__ == "__main__":
