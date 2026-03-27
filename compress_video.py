@@ -529,11 +529,13 @@ def analyze_volume_level(input_path, ffmpeg_path="ffmpeg"):
             cmd,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",  # Replace undecodable characters to avoid UnicodeDecodeError
             check=False,  # volumedetect outputs to stderr, return code may be 0
         )
 
-        # Parse volumedetect output from stderr
-        output = result.stderr
+        # Parse volumedetect output from stderr (use empty string if None)
+        output = result.stderr or ""
 
         # Parse mean_volume (e.g., [Parsed_volumedetect_0 @ ...] mean_volume: -27.5 dB)
         mean_match = re.search(r"mean_volume:\s*(-?[\d.]+)\s*dB", output)
