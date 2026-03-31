@@ -80,7 +80,7 @@ The script will automatically detect and use local executables if they exist.
 ### Basic Video Compression
 
 ```bash
-python compress_video.py input_video.mp4
+python -m video_compressor input_video.mp4
 ```
 
 The output file will be automatically created as `input_video_compressed.mp4`.
@@ -88,7 +88,7 @@ The output file will be automatically created as `input_video_compressed.mp4`.
 ### Basic Audio Compression (to MP3)
 
 ```bash
-python compress_video.py music.mp3 --audio-bitrate 128k
+python -m video_compressor music.mp3 --audio-bitrate 128k
 ```
 
 The output file will be automatically created as `music_compressed.mp3`.
@@ -100,7 +100,7 @@ Supported audio formats: `.mp3`, `.wav`, `.flac`, `.aac`, `.m4a`, `.ogg`, `.wma`
 If you run the script without specifying an input file, you will be prompted to enter the path:
 
 ```bash
-python compress_video.py
+python -m video_compressor
 ```
 
 ```text
@@ -112,13 +112,13 @@ Enter the path to the video file to compress: input_video.mp4
 ### Specify Output File Name
 
 ```bash
-python compress_video.py input_video.mp4 -o output_video.mp4
+python -m video_compressor input_video.mp4 -o output_video.mp4
 ```
 
 ### Change CRF Value (Quality Adjustment)
 
 ```bash
-python compress_video.py input_video.mp4 --crf 23
+python -m video_compressor input_video.mp4 --crf 23
 ```
 
 - CRF 0-23: High quality (larger file size)
@@ -129,7 +129,7 @@ python compress_video.py input_video.mp4 --crf 23
 ### Change Encoding Preset
 
 ```bash
-python compress_video.py input_video.mp4 --preset 10
+python -m video_compressor input_video.mp4 --preset 10
 ```
 
 - Preset 0-4: Slower encoding, better compression efficiency (smaller file)
@@ -139,38 +139,38 @@ python compress_video.py input_video.mp4 --preset 10
 ### Change Audio Bitrate (Video)
 
 ```bash
-python compress_video.py input_video.mp4 --audio-bitrate 256k
+python -m video_compressor input_video.mp4 --audio-bitrate 256k
 ```
 
 ### Audio Compression Examples
 
 ```bash
 # Compress MP3 to 128kbps
-python compress_video.py music.mp3 --audio-bitrate 128k
+python -m video_compressor music.mp3 --audio-bitrate 128k
 
 # Convert WAV to MP3
-python compress_video.py audio.wav --audio-bitrate 192k
+python -m video_compressor audio.wav --audio-bitrate 192k
 
 # Convert FLAC to MP3 with custom output
-python compress_video.py song.flac -o compressed.mp3
+python -m video_compressor song.flac -o compressed.mp3
 ```
 
 ### Disable Audio
 
 ```bash
-python compress_video.py input_video.mp4 --no-audio
+python -m video_compressor input_video.mp4 --no-audio
 ```
 
 ### Limit Resolution
 
 ```bash
-python compress_video.py input_video.mp4 --resolution 1920x1080
+python -m video_compressor input_video.mp4 --resolution 1920x1080
 ```
 
 ### Limit FPS
 
 ```bash
-python compress_video.py input_video.mp4 --fps 30
+python -m video_compressor input_video.mp4 --fps 30
 ```
 
 ### Volume Adjustment
@@ -180,25 +180,25 @@ The script supports automatic or manual volume adjustment for better audio clari
 **Analyze volume only (no compression):**
 
 ```bash
-python compress_video.py --analyze-volume
+python -m video_compressor --analyze-volume
 ```
 
 **Automatic volume adjustment:**
 
 ```bash
-python compress_video.py meeting.mp4 --volume-gain auto
+python -m video_compressor meeting.mp4 --volume-gain auto
 ```
 
 **Manual volume adjustment (multiplier):**
 
 ```bash
-python compress_video.py meeting.mp4 --volume-gain 2.0
+python -m video_compressor meeting.mp4 --volume-gain 2.0
 ```
 
 **Manual volume adjustment (dB):**
 
 ```bash
-python compress_video.py meeting.mp4 --volume-gain 10dB
+python -m video_compressor meeting.mp4 --volume-gain 10dB
 ```
 
 ### Noise Reduction
@@ -208,25 +208,25 @@ Reduce background noise for clearer audio.
 **Enable noise reduction (default level 0.15):**
 
 ```bash
-python compress_video.py meeting.mp4 --denoise
+python -m video_compressor meeting.mp4 --denoise
 ```
 
 **Custom noise reduction level (0.0-1.0):**
 
 ```bash
-python compress_video.py meeting.mp4 --denoise 0.3
+python -m video_compressor meeting.mp4 --denoise 0.3
 ```
 
 ### Combine Volume Adjustment and Noise Reduction
 
 ```bash
-python compress_video.py meeting.mp4 --volume-gain auto --denoise 0.2
+python -m video_compressor meeting.mp4 --volume-gain auto --denoise 0.2
 ```
 
 ### All Options Combined
 
 ```bash
-python compress_video.py input_video.mp4 -o output_video.mp4 --crf 23 --audio-bitrate 256k --resolution 1920x1080 --fps 60
+python -m video_compressor input_video.mp4 -o output_video.mp4 --crf 23 --audio-bitrate 256k --resolution 1920x1080 --fps 60
 ```
 
 ## Options
@@ -248,7 +248,7 @@ python compress_video.py input_video.mp4 -o output_video.mp4 --crf 23 --audio-bi
 ## Help
 
 ```bash
-python compress_video.py --help
+python -m video_compressor --help
 ```
 
 ## Feature Details
@@ -322,7 +322,7 @@ The script uses FFmpeg's `afftdn` filter for audio noise reduction:
 ### Compress 8K Video to 4K
 
 ```bash
-python compress_video.py 8k_video.mp4 -o compressed_4k.mp4
+python -m video_compressor 8k_video.mp4 -o compressed_4k.mp4
 ```
 
 Output: Resolution will be scaled down to 3840x2160 or below
@@ -330,38 +330,38 @@ Output: Resolution will be scaled down to 3840x2160 or below
 ### Compress for Web (1080p, 30fps)
 
 ```bash
-python compress_video.py video.mp4 --resolution 1920x1080 --fps 30
+python -m video_compressor video.mp4 --resolution 1920x1080 --fps 30
 ```
 
 ### High Quality Compression
 
 ```bash
-python compress_video.py video.mp4 --crf 20 --audio-bitrate 320k
+python -m video_compressor video.mp4 --crf 20 --audio-bitrate 320k
 ```
 
 ### Small File Size Priority
 
 ```bash
-python compress_video.py video.mp4 --crf 35 --audio-bitrate 128k
+python -m video_compressor video.mp4 --crf 35 --audio-bitrate 128k
 ```
 
 ### Video Only (No Audio)
 
 ```bash
-python compress_video.py video.mp4 --no-audio
+python -m video_compressor video.mp4 --no-audio
 ```
 
 ### Audio Compression Examples
 
 ```bash
 # Compress high-bitrate MP3
-python compress_video.py high_quality.mp3 --audio-bitrate 128k
+python -m video_compressor high_quality.mp3 --audio-bitrate 128k
 
 # Convert lossless FLAC to MP3
-python compress_video.py lossless.flac --audio-bitrate 320k
+python -m video_compressor lossless.flac --audio-bitrate 320k
 
 # Convert WAV to MP3
-python compress_video.py recording.wav --audio-bitrate 192k
+python -m video_compressor recording.wav --audio-bitrate 192k
 ```
 
 ## Notes
