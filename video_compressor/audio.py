@@ -171,7 +171,7 @@ def compress_audio(
 
     # Execute ffmpeg command
     process = None
-    stats = {"fps_list": [], "speed_list": [], "frame_list": [], "rolling_data": []}
+    stats = {"fps_list": [], "speed_list": [], "frame_list": []}
 
     try:
         process = subprocess.Popen(
