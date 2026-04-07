@@ -15,7 +15,17 @@ from .config import (
 )
 from .ffmpeg import get_audio_info
 from .progress import show_final_progress, update_progress
-from .utils import format_time, parse_bitrate
+from .utils import (
+    _BOLD,
+    _CYAN,
+    _DIM,
+    _GREEN,
+    _RESET,
+    _YELLOW,
+    format_time,
+    parse_bitrate,
+    print_header,
+)
 from .volume import (
     analyze_volume_level,
     build_audio_filter,
@@ -67,7 +77,6 @@ def compress_audio(
             output_path = output_path.with_suffix(".mp3")
 
     # Get audio information
-    print(f"Analyzing audio: {input_path}")
     audio_info = get_audio_info(input_path, ffprobe_path)
 
     total_duration = audio_info["duration"] or 0
@@ -75,10 +84,15 @@ def compress_audio(
     sample_rate = audio_info["sample_rate"]
     channels = audio_info["channels"]
 
+    # Build analysis section
+    analysis_rows = [
+        ("Source:     ", str(input_path)),
+    ]
+
     if original_bitrate:
-        print(f"Original bitrate: {original_bitrate // 1000} kbps")
+        analysis_rows.append(("Bitrate:    ", f"{original_bitrate // 1000} kbps"))
     if sample_rate:
-        print(f"Sample rate: {sample_rate} Hz")
+        analysis_rows.append(("Sample rate:", f"{sample_rate} Hz"))
     if channels:
         channel_str = (
             "Mono"
@@ -87,58 +101,89 @@ def compress_audio(
             if channels == 2
             else f"{channels} channels"
         )
-        print(f"Channels: {channel_str}")
+        analysis_rows.append(("Channels:   ", channel_str))
     if total_duration:
-        print(f"Duration: {format_time(total_duration)}")
+        analysis_rows.append(("Duration:   ", format_time(total_duration)))
+
+    print_header(
+        "Analysis",
+        analysis_rows,
+    )
 
     # Handle volume analysis only mode
     if analyze_only:
-        print("\nAnalyzing volume level...")
+        print(f"\n  {_DIM}Analyzing volume level...{_RESET}")
         volume_info = analyze_volume_level(input_path, ffmpeg_path)
 
         if volume_info["mean_volume"] is not None:
-            print("-" * 60)
-            print("Volume Analysis Results:")
-            print(f"  Mean volume: {volume_info['mean_volume']:.1f} dB")
-            print(f"  Max volume:  {volume_info['max_volume']:.1f} dB")
-            if volume_info["recommended_gain"] is not None:
-                print(f"  Recommended gain: {volume_info['recommended_gain']:+.1f} dB")
-                print(f"  Target level: {TARGET_VOLUME_LEVEL} dB")
-            print("-" * 60)
+            print_header(
+                "Volume Analysis",
+                [
+                    ("Mean volume:     ", f"{volume_info['mean_volume']:.1f} dB"),
+                    ("Max volume:      ", f"{volume_info['max_volume']:.1f} dB"),
+                    (
+                        "Recommended gain:",
+                        (
+                            f"{volume_info['recommended_gain']:+.1f} dB",
+                            _YELLOW,
+                        )
+                        if volume_info["recommended_gain"] is not None
+                        else "N/A",
+                    ),
+                    ("Target level:    ", f"{TARGET_VOLUME_LEVEL} dB"),
+                ],
+            )
         else:
             print("Error: Could not analyze volume level.")
         return
 
     # Parse volume gain
     volume_gain_db = None
+    volume_rows = []
     if volume_gain is not None:
         volume_gain_db, is_auto = parse_volume_gain(volume_gain)
         if is_auto:
             # Analyze and calculate auto gain
-            print("\nAnalyzing volume level for auto gain...")
+            print(f"\n  {_DIM}Analyzing volume level for auto gain...{_RESET}")
             volume_info = analyze_volume_level(input_path, ffmpeg_path)
             if volume_info["recommended_gain"] is not None:
                 volume_gain_db = volume_info["recommended_gain"]
-                print(f"Auto volume gain: {volume_gain_db:+.1f} dB")
-                print(f"  Current mean volume: {volume_info['mean_volume']:.1f} dB")
-                print(f"  Current max volume: {volume_info['max_volume']:.1f} dB")
+                volume_rows = [
+                    (
+                        "Volume gain:  ",
+                        (f"{volume_gain_db:+.1f} dB (auto)", _YELLOW),
+                    ),
+                    ("Mean volume:  ", f"{volume_info['mean_volume']:.1f} dB"),
+                    ("Max volume:   ", f"{volume_info['max_volume']:.1f} dB"),
+                ]
             else:
-                print("Warning: Could not analyze volume, skipping volume adjustment")
+                print(
+                    f"  {_YELLOW}Warning: Could not analyze volume, skipping volume adjustment{_RESET}"
+                )
 
     # Validate denoise level
     denoise = validate_denoise_level(denoise)
     if denoise is not None:
-        print(f"Denoise level: {denoise}")
+        volume_rows.append(("Denoise:      ", f"{denoise}"))
+
+    # Print audio/volume section if we have info
+    if volume_rows:
+        print_header(
+            "Audio Analysis",
+            volume_rows,
+        )
 
     # Validate and cap bitrate
     bitrate_kbps = parse_bitrate(bitrate)
     if bitrate_kbps < MP3_BITRATE_MIN:
         print(
-            f"Warning: Bitrate adjusted to minimum {MP3_BITRATE_MIN}k (requested: {bitrate})"
+            f"  {_YELLOW}Warning: Bitrate adjusted to minimum {MP3_BITRATE_MIN}k (requested: {bitrate}){_RESET}"
         )
         bitrate = f"{MP3_BITRATE_MIN}k"
     elif bitrate_kbps > MP3_BITRATE_MAX:
-        print(f"Warning: Bitrate capped to {MP3_BITRATE_MAX}k (requested: {bitrate})")
+        print(
+            f"  {_YELLOW}Warning: Bitrate capped to {MP3_BITRATE_MAX}k (requested: {bitrate}){_RESET}"
+        )
         bitrate = f"{MP3_BITRATE_MAX}k"
 
     # Build ffmpeg command
@@ -164,10 +209,18 @@ def compress_audio(
     # Output file
     cmd.append(str(output_path))
 
-    # Display command for reference
-    print(f"\nFFmpeg command: {' '.join(cmd)}\n")
-    print("Starting MP3 compression...")
-    print("-" * 60)
+    # Print settings section
+    print_header(
+        "Compression Settings",
+        [
+            ("Codec:   ", f"MP3 ({MP3_CODEC})"),
+            ("Bitrate: ", bitrate),
+        ],
+    )
+
+    # Print progress header
+    print(f"\n  {_BOLD}Starting MP3 compression...{_RESET}")
+    print(f"  {_CYAN}{'─' * 48}{_RESET}")
 
     # Execute ffmpeg command
     process = None
@@ -203,30 +256,39 @@ def compress_audio(
             if total_duration > 0:
                 show_final_progress(total_duration)
             print()  # New line after progress bar
-            print("-" * 60)
-            print("✓ MP3 compression completed successfully!")
-            print(f"  Output: {output_path}")
+            print(f"  {_CYAN}{'─' * 48}{_RESET}")
 
             # Get output file size
             output_size = output_path.stat().st_size / (1024 * 1024)  # MB
             input_size = input_path.stat().st_size / (1024 * 1024)  # MB
             compression_ratio = (1 - output_size / input_size) * 100
 
-            print(f"  Input size: {input_size:.2f} MB")
-            print(f"  Output size: {output_size:.2f} MB")
-            print(f"  Compression: {compression_ratio:.1f}% reduction")
-            print(f"  MP3 bitrate: {bitrate}")
+            # Build results section
+            result_rows = [
+                ("Input:      ", f"{input_size:.2f} MB"),
+                ("Output:     ", f"{output_size:.2f} MB"),
+                ("Reduction:  ", (f"{compression_ratio:.1f}%", _GREEN)),
+                ("MP3 bitrate:", bitrate),
+            ]
+
+            print_header(
+                "✓ Compression Completed",
+                result_rows,
+                color=_GREEN,
+            )
+            print(f"\n  {_GREEN}Output: {output_path}{_RESET}")
+
         else:
-            print(f"\n✗ Compression failed (return code: {process.returncode})")
+            print(f"\n\n  ✗ Compression failed (return code: {process.returncode})")
             sys.exit(1)
 
     except FileNotFoundError:
         print(
-            "Error: FFmpeg not found. Please ensure FFmpeg is installed and added to PATH."
+            "\n  Error: FFmpeg not found. Please ensure FFmpeg is installed and added to PATH."
         )
         sys.exit(1)
     except KeyboardInterrupt:
-        print("\n\nCompression interrupted by user.")
+        print("\n\n  Compression interrupted by user.")
         if process is not None:
             process.terminate()
         sys.exit(1)

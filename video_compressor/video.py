@@ -19,7 +19,18 @@ from .config import (
 )
 from .ffmpeg import get_detailed_media_info, get_video_info
 from .progress import show_final_progress, update_progress
-from .utils import calculate_scaled_resolution, format_time, parse_bitrate
+from .utils import (
+    _BOLD,
+    _CYAN,
+    _DIM,
+    _GREEN,
+    _RESET,
+    _YELLOW,
+    calculate_scaled_resolution,
+    format_time,
+    parse_bitrate,
+    print_header,
+)
 from .volume import (
     analyze_volume_level,
     build_audio_filter,
@@ -316,7 +327,6 @@ def compress_video(
         output_path = Path(output_path)
 
     # Get video information
-    print(f"Analyzing video: {input_path}")
     video_info = get_video_info(input_path, ffprobe_path)
 
     if not video_info:
@@ -328,50 +338,81 @@ def compress_video(
     original_fps = video_info["fps"]
     total_duration = video_info["duration"] or 0
 
-    print(f"Original resolution: {original_width}x{original_height}")
-    if original_fps:
-        print(f"Original FPS: {original_fps:.2f}")
-    if total_duration:
-        print(f"Duration: {format_time(total_duration)}")
+    # Print analysis section
+    duration_str = format_time(total_duration) if total_duration else "Unknown"
+    fps_display = f"{original_fps:.2f}" if original_fps else "Unknown"
+    print_header(
+        "Analysis",
+        [
+            ("Source:     ", str(input_path)),
+            ("Resolution: ", f"{original_width}x{original_height}"),
+            ("FPS:        ", fps_display),
+            ("Duration:   ", duration_str),
+        ],
+    )
 
     # Handle volume analysis only mode
     if analyze_only:
-        print("\nAnalyzing volume level...")
+        print(f"\n  {_DIM}Analyzing volume level...{_RESET}")
         volume_info = analyze_volume_level(input_path, ffmpeg_path)
 
         if volume_info["mean_volume"] is not None:
-            print("-" * 60)
-            print("Volume Analysis Results:")
-            print(f"  Mean volume: {volume_info['mean_volume']:.1f} dB")
-            print(f"  Max volume:  {volume_info['max_volume']:.1f} dB")
-            if volume_info["recommended_gain"] is not None:
-                print(f"  Recommended gain: {volume_info['recommended_gain']:+.1f} dB")
-                print(f"  Target level: {TARGET_VOLUME_LEVEL} dB")
-            print("-" * 60)
+            print_header(
+                "Volume Analysis",
+                [
+                    ("Mean volume:     ", f"{volume_info['mean_volume']:.1f} dB"),
+                    ("Max volume:      ", f"{volume_info['max_volume']:.1f} dB"),
+                    (
+                        "Recommended gain:",
+                        (
+                            f"{volume_info['recommended_gain']:+.1f} dB",
+                            _YELLOW,
+                        )
+                        if volume_info["recommended_gain"] is not None
+                        else "N/A",
+                    ),
+                    ("Target level:    ", f"{TARGET_VOLUME_LEVEL} dB"),
+                ],
+            )
         else:
             print("Error: Could not analyze volume level.")
         return
 
     # Parse volume gain
     volume_gain_db = None
+    volume_rows = []
     if volume_gain is not None:
         volume_gain_db, is_auto = parse_volume_gain(volume_gain)
         if is_auto:
             # Analyze and calculate auto gain
-            print("\nAnalyzing volume level for auto gain...")
+            print(f"\n  {_DIM}Analyzing volume level for auto gain...{_RESET}")
             volume_info = analyze_volume_level(input_path, ffmpeg_path)
             if volume_info["recommended_gain"] is not None:
                 volume_gain_db = volume_info["recommended_gain"]
-                print(f"Auto volume gain: {volume_gain_db:+.1f} dB")
-                print(f"  Current mean volume: {volume_info['mean_volume']:.1f} dB")
-                print(f"  Current max volume: {volume_info['max_volume']:.1f} dB")
+                volume_rows = [
+                    (
+                        "Volume gain:  ",
+                        (f"{volume_gain_db:+.1f} dB (auto)", _YELLOW),
+                    ),
+                    ("Mean volume:  ", f"{volume_info['mean_volume']:.1f} dB"),
+                    ("Max volume:   ", f"{volume_info['max_volume']:.1f} dB"),
+                ]
             else:
-                print("Warning: Could not analyze volume, skipping volume adjustment")
+                print(
+                    f"  {_YELLOW}Warning: Could not analyze volume, skipping volume adjustment{_RESET}"
+                )
 
     # Validate denoise level
     denoise = validate_denoise_level(denoise)
     if denoise is not None:
-        print(f"Denoise level: {denoise}")
+        volume_rows.append(("Denoise:      ", f"{denoise}"))
+
+    # Print audio/volume section if we have info
+    if volume_rows:
+        print_header(
+            "Audio Analysis",
+            volume_rows,
+        )
 
     # Parse custom resolution if provided
     custom_max_width = None
@@ -382,11 +423,10 @@ def compress_video(
             if len(res_parts) == 2:
                 custom_max_width = int(res_parts[0])
                 custom_max_height = int(res_parts[1])
-                print(
-                    f"Custom resolution limit: {custom_max_width}x{custom_max_height}"
-                )
         except ValueError:
-            print(f"Warning: Invalid resolution format '{resolution}', using defaults")
+            print(
+                f"  {_YELLOW}Warning: Invalid resolution format '{resolution}', using defaults{_RESET}"
+            )
 
     # Calculate scaled resolution if needed
     scaled_res = calculate_scaled_resolution(
@@ -398,31 +438,38 @@ def compress_video(
 
     # Build video filter chain
     video_filters = []
+    settings_rows = []
 
-    # Add scaling filter if needed
+    # Resolution info
     if scaled_res:
         scaled_width, scaled_height = scaled_res
-        print(
-            f"Scaling to {scaled_width}x{scaled_height} while maintaining aspect ratio"
+        settings_rows.append(
+            (
+                "Resolution: ",
+                f"{scaled_width}x{scaled_height} (from {original_width}x{original_height})",
+            )
         )
         video_filters.append(f"scale={scaled_width}:{scaled_height}")
     else:
-        print("No scaling needed (resolution within limits)")
+        settings_rows.append(
+            ("Resolution: ", f"{original_width}x{original_height} (no change)")
+        )
 
     # Add FPS filter if needed
-    fps_filter = None
+    fps_label = ""
     if max_fps is not None and original_fps and original_fps > max_fps:
-        print(f"Limiting FPS from {original_fps:.2f} to {max_fps}")
-        fps_filter = f"fps={max_fps}"
-        video_filters.append(fps_filter)
+        fps_label = f"{max_fps} fps (from {original_fps:.2f})"
+        video_filters.append(f"fps={max_fps}")
     elif max_fps is not None and not original_fps:
-        print(f"Warning: FPS unknown, applying FPS limit of {max_fps} as a precaution")
-        fps_filter = f"fps={max_fps}"
-        video_filters.append(fps_filter)
+        fps_label = f"{max_fps} fps (limit applied, original unknown)"
+        video_filters.append(f"fps={max_fps}")
     elif max_fps is not None:
-        print(
-            f"FPS limit: {max_fps} (original: {f'{original_fps:.2f}' if original_fps else 'unknown'})"
-        )
+        fps_label = f"{max_fps} fps (original: {original_fps:.2f}, no change)"
+    elif original_fps:
+        fps_label = f"{original_fps:.2f} (original)"
+    else:
+        fps_label = "Unknown"
+    settings_rows.append(("FPS:        ", fps_label))
 
     # Apply video filters if any
     if video_filters:
@@ -442,13 +489,17 @@ def compress_video(
         ]
     )
 
+    settings_rows.append(
+        ("Video:      ", f"{VIDEO_CODEC.upper()} | CRF {crf} | Preset {preset}")
+    )
+
     # Audio codec settings
     if audio_enabled:
         # Validate and cap audio bitrate
         bitrate_kbps = parse_bitrate(audio_bitrate)
         if bitrate_kbps > MAX_AUDIO_BITRATE:
             print(
-                f"Warning: Audio bitrate capped to {MAX_AUDIO_BITRATE}k (requested: {audio_bitrate})"
+                f"  {_YELLOW}Warning: Audio bitrate capped to {MAX_AUDIO_BITRATE}k (requested: {audio_bitrate}){_RESET}"
             )
             audio_bitrate = f"{MAX_AUDIO_BITRATE}k"
 
@@ -465,18 +516,25 @@ def compress_video(
                 audio_bitrate,
             ]
         )
-        print(f"Audio: {AUDIO_CODEC} @ {audio_bitrate}")
+        settings_rows.append(
+            ("Audio:      ", f"{AUDIO_CODEC.upper()} @ {audio_bitrate}")
+        )
     else:
         cmd.extend(["-an"])  # No audio
-        print("Audio: Disabled")
+        settings_rows.append(("Audio:      ", "Disabled"))
 
     # Output file
     cmd.append(str(output_path))
 
-    # Display command for reference
-    print(f"\nFFmpeg command: {' '.join(cmd)}\n")
-    print("Starting compression...")
-    print("-" * 60)
+    # Print settings section
+    print_header(
+        "Compression Settings",
+        settings_rows,
+    )
+
+    # Print progress header
+    print(f"\n  {_BOLD}Starting compression...{_RESET}")
+    print(f"  {_CYAN}{'─' * 48}{_RESET}")
 
     # Execute ffmpeg command
     process = None
@@ -512,38 +570,50 @@ def compress_video(
             if total_duration > 0:
                 show_final_progress(total_duration)
             print()  # New line after progress bar
-            print("-" * 60)
-            print("✓ Compression completed successfully!")
-            print(f"  Output: {output_path}")
+            print(f"  {_CYAN}{'─' * 48}{_RESET}")
 
             # Get output file size
             output_size = output_path.stat().st_size / (1024 * 1024)  # MB
             input_size = input_path.stat().st_size / (1024 * 1024)  # MB
             compression_ratio = (1 - output_size / input_size) * 100
 
-            print(f"  Input size: {input_size:.2f} MB")
-            print(f"  Output size: {output_size:.2f} MB")
-            print(f"  Compression: {compression_ratio:.1f}% reduction")
+            # Build results section
+            result_rows = [
+                ("Input:      ", f"{input_size:.2f} MB"),
+                ("Output:     ", f"{output_size:.2f} MB"),
+                ("Reduction:  ", (f"{compression_ratio:.1f}%", _GREEN)),
+            ]
 
             # Display average statistics
             if stats["fps_list"]:
                 avg_fps = sum(stats["fps_list"]) / len(stats["fps_list"])
                 avg_speed = sum(stats["speed_list"]) / len(stats["speed_list"])
                 total_frames = stats["frame_list"][-1] if stats["frame_list"] else 0
-                print(
-                    f"  Avg encoding speed: {avg_fps:.1f} fps, {avg_speed:.2f}x | Total frames: {total_frames}"
+                result_rows.append(
+                    (
+                        "Avg speed:  ",
+                        f"{avg_fps:.1f} fps · {avg_speed:.2f}x · {total_frames} frames",
+                    )
                 )
+
+            print_header(
+                "✓ Compression Completed",
+                result_rows,
+                color=_GREEN,
+            )
+            print(f"\n  {_GREEN}Output: {output_path}{_RESET}")
+
         else:
-            print(f"\n✗ Compression failed (return code: {process.returncode})")
+            print(f"\n\n  ✗ Compression failed (return code: {process.returncode})")
             sys.exit(1)
 
     except FileNotFoundError:
         print(
-            "Error: FFmpeg not found. Please ensure FFmpeg is installed and added to PATH."
+            "\n  Error: FFmpeg not found. Please ensure FFmpeg is installed and added to PATH."
         )
         sys.exit(1)
     except KeyboardInterrupt:
-        print("\n\nCompression interrupted by user.")
+        print("\n\n  Compression interrupted by user.")
         if process is not None:
             process.terminate()
         sys.exit(1)

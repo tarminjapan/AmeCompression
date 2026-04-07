@@ -6,7 +6,7 @@ import re
 import sys
 
 from .config import PROGRESS_BAR_LENGTH
-from .utils import format_time
+from .utils import _BOLD, _CYAN, _DIM, _GREEN, _RESET, _YELLOW, format_time
 
 
 def update_progress(line, total_duration, stats=None):
@@ -53,7 +53,7 @@ def update_progress(line, total_duration, stats=None):
 
         # Extract elapsed time and calculate estimated remaining time
         elapsed_match = re.search(r"elapsed=(\d+):(\d+):(\d+\.?\d*)", line)
-        eta_str = "--:--"
+        eta_str = f"{_YELLOW}--:--{_RESET}"
         if elapsed_match and progress > 0:
             elapsed_hours = int(elapsed_match.group(1))
             elapsed_minutes = int(elapsed_match.group(2))
@@ -64,26 +64,31 @@ def update_progress(line, total_duration, stats=None):
             if progress < 100:
                 remaining_progress = 100 - progress
                 eta_seconds = elapsed_time * (remaining_progress / progress)
-                eta_str = format_time(eta_seconds)
+                eta_str = f"{_YELLOW}{format_time(eta_seconds)}{_RESET}"
             else:
-                eta_str = "00:00.0"
+                eta_str = f"{_GREEN}00:00.0{_RESET}"
 
-        # Display progress bar
+        # Build the progress bar
         filled = int(PROGRESS_BAR_LENGTH * progress / 100)
         bar = "█" * filled + "░" * (PROGRESS_BAR_LENGTH - filled)
 
-        # Format current time
-        current_min = int(current_time // 60)
-        current_sec = current_time % 60
-        total_min = int(total_duration // 60)
-        total_sec = total_duration % 60
+        # Format times
+        current_str = format_time(current_time)
+        total_str = format_time(total_duration)
 
-        # Update the same line (return to beginning of line with \r)
-        sys.stdout.write(
-            f"\r  [{bar}] {progress:5.1f}% | "
-            f"{current_min:02d}:{current_sec:04.1f}/{total_min:02d}:{total_sec:04.1f} | "
-            f"ETA {eta_str} | {fps:.0f} fps | {speed:.2f}x | Frame: {frame}"
+        # Choose bar color
+        bar_color = _GREEN if progress >= 100 else _CYAN
+
+        # Build single-line display with colors
+        output = (
+            f"\r  {bar_color}[{bar}]{_RESET} {_BOLD}{progress:5.1f}%{_RESET}"
+            f"  {_DIM}│{_RESET} {current_str}{_DIM}/{_RESET}{total_str}"
+            f"  {_DIM}│{_RESET} ETA {eta_str}"
+            f"  {_DIM}│{_RESET} {_DIM}{fps:>4.0f}{_RESET} fps"
+            f" {_DIM}·{_RESET} {_DIM}{speed:.1f}x{_RESET}"
+            f" {_DIM}·{_RESET} {_DIM}F{_RESET}{frame}"
         )
+        sys.stdout.write(output)
         sys.stdout.flush()
         return True
     return False
@@ -97,12 +102,15 @@ def show_final_progress(total_duration):
         total_duration (float): Total video duration in seconds
     """
     bar = "█" * PROGRESS_BAR_LENGTH
-    total_min = int(total_duration // 60)
-    total_sec = total_duration % 60
+    total_str = format_time(total_duration)
 
-    sys.stdout.write(
-        f"\r  [{bar}] 100.0% | "
-        f"{total_min:02d}:{total_sec:04.1f}/{total_min:02d}:{total_sec:04.1f} | "
-        f"ETA 00:00.0 | -- fps | --x | Frame: --"
+    output = (
+        f"\r  {_GREEN}[{bar}]{_RESET} {_BOLD}100.0%{_RESET}"
+        f"  {_DIM}│{_RESET} {total_str}{_DIM}/{_RESET}{total_str}"
+        f"  {_DIM}│{_RESET} ETA {_GREEN}✓ Done{_RESET}"
+        f"  {_DIM}│{_RESET} {_DIM}  --{_RESET} fps"
+        f" {_DIM}·{_RESET} {_DIM}--x{_RESET}"
+        f" {_DIM}·{_RESET} {_DIM}F{_RESET}--"
     )
+    sys.stdout.write(output)
     sys.stdout.flush()

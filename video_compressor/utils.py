@@ -17,6 +17,8 @@ _MAGENTA = "\033[95m"
 _DIM = "\033[2m"
 _BOLD = "\033[1m"
 _RESET = "\033[0m"
+_GREEN = "\033[92m"
+_YELLOW = "\033[93m"
 
 _ASCII_BANNER = r"""
    __  __          __
@@ -28,7 +30,7 @@ _ASCII_BANNER = r"""
       `\/__/  \/_/\/__,_ /\/____/\/___/
   ____
  /\  _`\
- \ \ \/\_\    ___     ___ ___   _____   _ __    __    ____    ____    ___   _ __ 
+ \ \ \/\_\    ___     ___ ___   _____   _ __    __    ____    ____    ___   _ __
   \ \ \/_/_  / __`\ /' __` __`\/\ '__`\/\`'__\/'__`\ /',__\  /',__\  / __`\/\`'__\
    \ \ \L\ \/\ \L\ \/\ \/\ \/\ \ \ \L\ \ \ \//\  __//\__, `\/\__, `\/\ \L\ \ \ \/
     \ \____/\ \____/\ \_\ \_\ \_\ \ ,__/\ \_\\ \____\/\____/\/\____/\ \____/\_\ \
@@ -47,6 +49,27 @@ def print_banner():
     print(f"{_DIM}  ▸ Video / Audio Compression Tool{_RESET}")
     print(f"{_DIM}{line}{_RESET}")
     print()
+
+
+def print_header(title, rows, color=_CYAN):
+    """
+    Print a styled section with a colored header line and indented rows.
+
+    Args:
+        title (str): Section title
+        rows (list[tuple]): List of (label, value) pairs. Value can be a string
+                           or a tuple (value, value_color) for colored values.
+        color (str): ANSI color code for the header
+    """
+    print(f"\n  {color}{_BOLD}── {title} {'─' * (44 - len(title))}{_RESET}")
+    for row in rows:
+        label = row[0]
+        value_data = row[1] if len(row) > 1 else ""
+        if isinstance(value_data, tuple):
+            value_str, val_color = value_data
+            print(f"  {_DIM}{label}{_RESET}{val_color}{value_str}{_RESET}")
+        else:
+            print(f"  {_DIM}{label}{_RESET}{value_data}")
 
 
 def format_time(seconds):
