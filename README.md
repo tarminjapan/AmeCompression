@@ -68,12 +68,12 @@ sudo apt install ffmpeg
 
 **Option 2: Local FFmpeg (Recommended for Portability)**
 
-You can place FFmpeg executables in the same directory as the script:
+You can place FFmpeg executables in the project's `bin` directory:
 
-- Windows: `ffmpeg.exe` and `ffprobe.exe`
-- macOS/Linux: `ffmpeg` and `ffprobe`
+- Windows: `bin/ffmpeg.exe` and `bin/ffprobe.exe`
+- macOS/Linux: `bin/ffmpeg` and `bin/ffprobe`
 
-The script will automatically detect and use local executables if they exist.
+The script will automatically detect and use executables from the `bin` directory if they exist.
 
 ## Usage
 
@@ -424,7 +424,7 @@ python -m video_compressor recording.wav --audio-bitrate 192k
 
 - Ensure FFmpeg is correctly installed
 - Check that FFmpeg is included in your system PATH
-- Alternatively, place `ffmpeg` and `ffprobe` executables in the script directory
+- Alternatively, place `ffmpeg` and `ffprobe` executables in the `bin` directory
 - Verify by running `ffmpeg -version` in the command line
 
 ### Video/Audio Info Retrieval Error

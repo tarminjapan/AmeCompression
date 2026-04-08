@@ -68,12 +68,12 @@ sudo apt install ffmpeg
 
 **オプション2: ローカルFFmpeg（ポータビリティ推奨）**
 
-FFmpegの実行ファイルをスクリプトと同じディレクトリに配置できます：
+FFmpegの実行ファイルをプロジェクトの `bin` ディレクトリに配置できます：
 
-- Windows: `ffmpeg.exe` と `ffprobe.exe`
-- macOS/Linux: `ffmpeg` と `ffprobe`
+- Windows: `bin/ffmpeg.exe` と `bin/ffprobe.exe`
+- macOS/Linux: `bin/ffmpeg` と `bin/ffprobe`
 
-スクリプトは、ローカルの実行ファイルが存在する場合、自動的に検出して使用します。
+スクリプトは、`bin` ディレクトリに実行ファイルが存在する場合、自動的に検出して使用します。
 
 ## 使用方法
 
@@ -425,7 +425,7 @@ python -m video_compressor recording.wav --audio-bitrate 192k
 
 - FFmpegが正しくインストールされていることを確認してください
 - FFmpegがシステムPATHに含まれていることを確認してください
-- または、`ffmpeg`と`ffprobe`の実行ファイルをスクリプトディレクトリに配置してください
+- または、`ffmpeg`と`ffprobe`の実行ファイルを `bin` ディレクトリに配置してください
 - コマンドラインで `ffmpeg -version` を実行して確認してください
 
 ### 動画/音声情報取得エラー

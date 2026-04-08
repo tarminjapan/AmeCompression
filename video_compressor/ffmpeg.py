@@ -9,7 +9,7 @@ from pathlib import Path
 def get_ffmpeg_executables():
     """
     Detect OS and return appropriate FFmpeg executable paths.
-    Checks for local FFmpeg executables in the script root directory first.
+    Checks for local FFmpeg executables in the bin directory first.
 
     Returns:
         tuple: (ffmpeg_path, ffprobe_path)
@@ -21,9 +21,9 @@ def get_ffmpeg_executables():
     ffmpeg_name = "ffmpeg.exe" if is_windows else "ffmpeg"
     ffprobe_name = "ffprobe.exe" if is_windows else "ffprobe"
 
-    # Check for local FFmpeg executables
-    local_ffmpeg = script_dir / ffmpeg_name
-    local_ffprobe = script_dir / ffprobe_name
+    # Check for local FFmpeg executables in bin directory
+    local_ffmpeg = script_dir / "bin" / ffmpeg_name
+    local_ffprobe = script_dir / "bin" / ffprobe_name
 
     if local_ffmpeg.exists() and local_ffprobe.exists():
         print(f"Using local FFmpeg: {local_ffmpeg}")
