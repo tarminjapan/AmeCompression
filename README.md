@@ -22,6 +22,7 @@ A Python script for video and audio compression using FFmpeg with SVT-AV1 codec 
 
 ### Common Features
 
+- **Batch Processing**: Compress multiple files at once with progress summary
 - **Progress Display**: Real-time progress bar with ETA, FPS, and speed indicators
 - **Volume Adjustment**: Automatic or manual volume gain for better audio clarity
 - **Noise Reduction**: Audio denoise filter to reduce background noise
@@ -104,16 +105,55 @@ python -m video_compressor
 ```
 
 ```text
-Enter the path to the video file to compress: input_video.mp4
+Enter the path(s) to the file(s) to compress: input_video.mp4
 ```
 
 > **Note**: The script automatically removes surrounding double quotes from file paths, so paths like `"C:\Videos\my video.mp4"` will work correctly.
+
+### Batch Processing (Multiple Files)
+
+You can compress multiple files at once by specifying multiple input paths. Paths can be separated by spaces, commas, or newlines:
+
+```bash
+# Space-separated
+python -m video_compressor "file1.mp4" "file2.mp4" "file3.mp4"
+
+# Comma-separated
+python -m video_compressor "file1.mp4", "file2.mp4", "file3.mp4"
+
+# With output directory
+python -m video_compressor file1.mp4 file2.mp4 -o /path/to/output_dir/
+```
+
+When processing multiple files:
+
+- A progress indicator `[1/3]`, `[2/3]`, etc. is shown for each file
+- If one file fails, processing continues with the remaining files
+- A summary showing success/failure counts is displayed at the end
+
+You can also enter multiple files in interactive mode:
+
+```text
+Enter the path(s) to the file(s) to compress: "C:\Videos\video1.mp4", "C:\Videos\video2.mp4"
+```
 
 ### Specify Output File Name
 
 ```bash
 python -m video_compressor input_video.mp4 -o output_video.mp4
 ```
+
+When processing multiple files, specify a directory instead:
+
+```bash
+# Output to an existing directory
+python -m video_compressor file1.mp4 file2.mp4 -o /path/to/output_dir/
+
+# Output to a new directory (will be created)
+python -m video_compressor file1.mp4 file2.mp4 -o /path/to/new_dir/
+```
+
+> **Note**: For multiple files, `--output` must be a directory path. For a single file, you can specify either a file or directory path.
 
 ### Change CRF Value (Quality Adjustment)
 
@@ -280,8 +320,8 @@ python -m video_compressor input_video.mp4 -o output_video.mp4 --crf 23 --audio-
 
 | Option | Description | Default |
 | - | - | - |
-| `input` | Input video/audio file path (optional, will prompt if not provided) | - |
-| `-o`, `--output` | Output file path | Video: `{input_filename}_compressed.{extension}`, Audio: `{input_filename}_compressed.mp3` |
+| `input` | Input file path(s). Multiple files can be separated by spaces, commas, or newlines. (optional, will prompt if not provided) | - |
+| `-o`, `--output` | Output file or directory path. For multiple files, specify a directory. | Video: `{input_filename}_compressed.{extension}`, Audio: `{input_filename}_compressed.mp3` |
 | `--crf` | AV1 CRF value (0-63, video only) | 25 |
 | `--preset` | Encoding speed preset (0-13, higher = faster, video only) | 6 |
 | `--audio-bitrate` | Audio bitrate (video: max 320k, audio: 32k-320k) | 192k |

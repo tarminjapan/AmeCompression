@@ -2,6 +2,7 @@
 Utility functions for video compression.
 """
 
+import re
 from pathlib import Path
 
 from . import __version__
@@ -161,3 +162,45 @@ def calculate_scaled_resolution(width, height, max_width=None, max_height=None):
     scaled_height = max(2, int(height * scale_ratio) // 2 * 2)
 
     return (scaled_width, scaled_height)
+
+
+def parse_input_paths(raw_inputs):
+    """
+    Parse raw input string(s) into a list of individual file paths.
+
+    Supports the following delimiters:
+    - Newline (\\n)
+    - Comma (,)
+    - Whitespace (spaces, tabs)
+
+    Handles double-quoted paths containing spaces.
+
+    Args:
+        raw_inputs (str or list[str]): Raw input string(s) containing one or more file paths
+
+    Returns:
+        list[str]: List of individual file paths
+    """
+    if not raw_inputs:
+        return []
+
+    # If a single string is provided, put it in a list
+    if isinstance(raw_inputs, str):
+        raw_inputs = [raw_inputs]
+
+    # Join all inputs with a space, normalizing newlines and commas to spaces
+    combined = "\n".join(raw_inputs)
+
+    # Replace commas with newlines for uniform parsing
+    combined = combined.replace(",", "\n")
+
+    # Parse using regex: extract double-quoted strings OR non-whitespace sequences
+    paths = []
+    for match in re.finditer(r'"([^"]*)"|\S+', combined):
+        # If quoted, use group(1) (content inside quotes); otherwise group(0) (full match)
+        path = match.group(1) if match.group(1) is not None else match.group(0)
+        path = path.strip()
+        if path:
+            paths.append(path)
+
+    return paths

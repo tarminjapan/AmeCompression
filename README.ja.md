@@ -22,6 +22,7 @@ FFmpegを使用した動画・音声圧縮用Pythonスクリプト（動画: SVT
 
 ### 共通機能
 
+- **バッチ処理**: 複数ファイルを一括で圧縮し、処理結果のサマリーを表示
 - **進捗表示**: ETA、FPS、速度インジケーター付きのリアルタイムプログレスバー
 - **音量調整**: 自動または手動での音量ゲイン調整で音声を聞き取りやすく
 - **ノイズ除去**: 背景ノイズを低減するオーディオノイズフィルター
@@ -104,16 +105,55 @@ python -m video_compressor
 ```
 
 ```text
-Enter the path to the video file to compress: input_video.mp4
+Enter the path(s) to the file(s) to compress: input_video.mp4
 ```
 
 > **注意**: スクリプトは自動的にファイルパスの前後のダブルクォートを削除するため、`"C:\Videos\my video.mp4"` のようなパスも正しく動作します。
+
+### バッチ処理（複数ファイルの一括圧縮）
+
+複数の入力パスを指定することで、複数ファイルを一括で圧縮できます。パスはスペース、カンマ、改行で区切って指定できます：
+
+```bash
+# スペース区切り
+python -m video_compressor "file1.mp4" "file2.mp4" "file3.mp4"
+
+# カンマ区切り
+python -m video_compressor "file1.mp4", "file2.mp4", "file3.mp4"
+
+# 出力ディレクトリを指定
+python -m video_compressor file1.mp4 file2.mp4 -o /path/to/output_dir/
+```
+
+複数ファイル処理時の動作：
+
+- 各ファイルの処理状況 `[1/3]`、`[2/3]`... が表示されます
+- 1つのファイルが失敗しても、残りのファイルの処理は継続されます
+- 処理完了後に成功/失敗件数のサマリーが表示されます
+
+インタラクティブモードでも複数ファイルを入力できます：
+
+```text
+Enter the path(s) to the file(s) to compress: "C:\Videos\video1.mp4", "C:\Videos\video2.mp4"
+```
 
 ### 出力ファイル名を指定
 
 ```bash
 python -m video_compressor input_video.mp4 -o output_video.mp4
 ```
+
+複数ファイル処理時はディレクトリを指定します：
+
+```bash
+# 既存のディレクトリに出力
+python -m video_compressor file1.mp4 file2.mp4 -o /path/to/output_dir/
+
+# 新しいディレクトリを作成して出力
+python -m video_compressor file1.mp4 file2.mp4 -o /path/to/new_dir/
+```
+
+> **注意**: 複数ファイルの場合、`--output` にはディレクトリパスを指定してください。単一ファイルの場合はファイルパスでもディレクトリパスでも指定可能です。
 
 ### CRF値の変更（品質調整）
 
@@ -281,8 +321,8 @@ python -m video_compressor input_video.mp4 -o output_video.mp4 --crf 23 --audio-
 
 | オプション | 説明 | デフォルト値 |
 | - | - | - |
-| `input` | 入力動画/音声ファイルパス（任意、未指定時は入力を求められます） | - |
-| `-o`, `--output` | 出力ファイルパス | 動画: `{入力ファイル名}_compressed.{拡張子}`, 音声: `{入力ファイル名}_compressed.mp3` |
+| `input` | 入力ファイルパス（複数可。スペース、カンマ、改行で区切り。任意、未指定時は入力を求められます） | - |
+| `-o`, `--output` | 出力ファイルまたはディレクトリパス。複数ファイル時はディレクトリを指定。 | 動画: `{入力ファイル名}_compressed.{拡張子}`, 音声: `{入力ファイル名}_compressed.mp3` |
 | `--crf` | AV1 CRF値（0-63、動画のみ） | 25 |
 | `--preset` | エンコード速度プリセット（0-13、高い値=高速、動画のみ） | 6 |
 | `--audio-bitrate` | オーディオビットレート（動画: 最大320k、音声: 32k-320k） | 192k |
