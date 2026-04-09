@@ -330,8 +330,6 @@ python -m video_compressor meeting.mp4 --volume-gain auto --denoise 0.2
 python -m video_compressor input_video.mp4 -o output_video.mp4 --crf 23 --audio-bitrate 256k --resolution 1920x1080 --fps 60
 ```
 
-#pagebreak()
-
 == オプション
 
 #table(
@@ -363,8 +361,6 @@ python -m video_compressor input_video.mp4 -o output_video.mp4 --crf 23 --audio-
 ```bash
 python -m video_compressor --help
 ```
-
-#pagebreak()
 
 == 機能詳細
 
@@ -515,8 +511,6 @@ python -m video_compressor recording.wav --audio-bitrate 192k
 - プログレスバーには動画の長さ情報が必要です
 - 一部の動画形式では長さのメタデータが提供されない場合があります
 - 圧縮は正常に完了します
-
-#pagebreak()
 
 == ライセンス
 

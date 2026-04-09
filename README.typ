@@ -329,8 +329,6 @@ python -m video_compressor meeting.mp4 --volume-gain auto --denoise 0.2
 python -m video_compressor input_video.mp4 -o output_video.mp4 --crf 23 --audio-bitrate 256k --resolution 1920x1080 --fps 60
 ```
 
-#pagebreak()
-
 == Options
 
 #table(
@@ -364,8 +362,6 @@ python -m video_compressor input_video.mp4 -o output_video.mp4 --crf 23 --audio-
 ```bash
 python -m video_compressor --help
 ```
-
-#pagebreak()
 
 == Feature Details
 
@@ -516,8 +512,6 @@ python -m video_compressor recording.wav --audio-bitrate 192k
 - The progress bar requires video duration information
 - Some video formats may not provide duration metadata
 - The compression will still complete successfully
-
-#pagebreak()
 
 == License
 
