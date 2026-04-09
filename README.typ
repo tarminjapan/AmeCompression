@@ -27,6 +27,7 @@ The latest information is described in the README.md file.
 
 === Common Features
 
+- Batch Processing: Compress multiple files at once with progress summary
 - Progress Display: Real-time progress bar with ETA, FPS, and speed indicators
 - Volume Adjustment: Automatic or manual volume gain for better audio clarity
 - Noise Reduction: Audio denoise filter to reduce background noise
@@ -75,12 +76,12 @@ sudo apt install ffmpeg
 
 *Option 2: Local FFmpeg (Recommended for Portability)*
 
-You can place FFmpeg executables in the same directory as the script:
+You can place FFmpeg executables in the project's `bin` directory:
 
-- Windows: `ffmpeg.exe` and `ffprobe.exe`
-- macOS/Linux: `ffmpeg` and `ffprobe`
+- Windows: `bin/ffmpeg.exe` and `bin/ffprobe.exe`
+- macOS/Linux: `bin/ffmpeg` and `bin/ffprobe`
 
-The script will automatically detect and use local executables if they exist.
+The script will automatically detect and use executables from the `bin` directory if they exist.
 
 #pagebreak()
 
@@ -113,18 +114,59 @@ python -m video_compressor
 ```
 
 ```text
-Enter the path to the video file to compress: input_video.mp4
+Enter the path(s) to the file(s) to compress: input_video.mp4
 ```
 
 #quote[
   Note: The script automatically removes surrounding double quotes from file paths, so paths like `"C:\Videos\my video.mp4"` will work correctly.
 ]
 
+=== Batch Processing (Multiple Files)
+
+You can compress multiple files at once by specifying multiple input paths. Paths can be separated by spaces, commas, or newlines:
+
+```bash
+# Space-separated
+python -m video_compressor "file1.mp4" "file2.mp4" "file3.mp4"
+
+# Comma-separated
+python -m video_compressor "file1.mp4", "file2.mp4", "file3.mp4"
+
+# With output directory
+python -m video_compressor file1.mp4 file2.mp4 -o /path/to/output_dir/
+```
+
+When processing multiple files:
+
+- A progress indicator `[1/3]`, `[2/3]`, etc. is shown for each file
+- If one file fails, processing continues with the remaining files
+- A summary showing success/failure counts is displayed at the end
+
+You can also enter multiple files in interactive mode:
+
+```text
+Enter the path(s) to the file(s) to compress: "C:\Videos\video1.mp4", "C:\Videos\video2.mp4"
+```
+
 === Specify Output File Name
 
 ```bash
 python -m video_compressor input_video.mp4 -o output_video.mp4
 ```
+
+When processing multiple files, specify a directory instead:
+
+```bash
+# Output to an existing directory
+python -m video_compressor file1.mp4 file2.mp4 -o /path/to/output_dir/
+
+# Output to a new directory (will be created)
+python -m video_compressor file1.mp4 file2.mp4 -o /path/to/new_dir/
+```
+
+#quote[
+  Note: For multiple files, `--output` must be a directory path. For a single file, you can specify either a file or directory path.
+]
 
 === Change CRF Value (Quality Adjustment)
 
@@ -298,9 +340,11 @@ python -m video_compressor input_video.mp4 -o output_video.mp4 --crf 23 --audio-
   table.hline(),
   [*Option*], [*Description*], [*Default*],
   table.hline(stroke: 0.5pt),
-  [`input`], [Input video/audio file path (optional, will prompt if not provided)], [-],
+  [`input`],
+  [Input file path(s). Multiple files can be separated by spaces, commas, or newlines. (optional, will prompt if not provided)],
+  [-],
   [`-o`, `--output`],
-  [Output file path],
+  [Output file or directory path. For multiple files, specify a directory.],
   [Video: `{input_filename}_compressed.{extension}`, Audio: `{input_filename}_compressed.mp3`],
   [`--crf`], [AV1 CRF value (0-63, video only)], [25],
   [`--preset`], [Encoding speed preset (0-13, higher = faster, video only)], [6],
@@ -452,7 +496,7 @@ python -m video_compressor recording.wav --audio-bitrate 192k
 
 - Ensure FFmpeg is correctly installed
 - Check that FFmpeg is included in your system PATH
-- Alternatively, place `ffmpeg` and `ffprobe` executables in the script directory
+- Alternatively, place `ffmpeg` and `ffprobe` executables in the `bin` directory
 - Verify by running `ffmpeg -version` in the command line
 
 === Video/Audio Info Retrieval Error
@@ -472,3 +516,9 @@ python -m video_compressor recording.wav --audio-bitrate 192k
 - The progress bar requires video duration information
 - Some video formats may not provide duration metadata
 - The compression will still complete successfully
+
+#pagebreak()
+
+== License
+
+This script is free to use, modify, and distribute.
