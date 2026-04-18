@@ -97,17 +97,26 @@ class TranslationManager:
         for lang in _SUPPORTED_LANGUAGES:
             filepath = self._translations_dir / f"{lang}.json"
             if filepath.is_file():
-                with open(filepath, encoding="utf-8") as f:
-                    self._translations[lang] = json.load(f)
+                try:
+                    with open(filepath, encoding="utf-8") as f:
+                        self._translations[lang] = json.load(f)
+                except (json.JSONDecodeError, OSError):
+                    self._translations[lang] = {}
             else:
                 self._translations[lang] = {}
 
     def _load_language_preference(self):
         """Load saved language preference from the settings file.
 
-        Falls back to the environment variable ``AME_LANGUAGE`` or the
-        default language if no saved preference exists.
+        Checks the environment variable ``AME_LANGUAGE`` first (for
+        debugging or temporary overrides), then falls back to the
+        persisted settings file, and finally to the default language.
         """
+        env_lang = os.environ.get("AME_LANGUAGE")
+        if env_lang and env_lang in _SUPPORTED_LANGUAGES:
+            self._current_lang = env_lang
+            return
+
         settings_path = self._config_dir / _SETTINGS_FILENAME
         if settings_path.is_file():
             try:
@@ -119,10 +128,6 @@ class TranslationManager:
                     return
             except (json.JSONDecodeError, OSError):
                 pass
-
-        env_lang = os.environ.get("AME_LANGUAGE")
-        if env_lang and env_lang in _SUPPORTED_LANGUAGES:
-            self._current_lang = env_lang
 
     def _save_language_preference(self):
         """Persist the current language selection to the settings file."""
