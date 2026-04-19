@@ -22,8 +22,11 @@ repos:
     hooks:
       - id: pyright
         name: pyright (static type checker)
-        entry: python -m pyright
-        language: system
+        entry: pyright
+        language: python
+        additional_dependencies:
+          - pyright==1.1.403
+          - customtkinter==5.2.2
         types: [python]
         pass_filenames: false
 

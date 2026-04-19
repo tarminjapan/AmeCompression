@@ -25,6 +25,10 @@ classifiers = [
     "Topic :: Multimedia :: Video",
     "Topic :: Multimedia :: Sound/Audio",
 ]
+dependencies = [
+    "customtkinter>=5.2.2",
+    "windnd>=1.0.7",
+]
 
 [project.optional-dependencies]
 gui = [
@@ -105,16 +109,18 @@ line-ending = "auto"
 # Pyright (Pylance static type checker)
 # =============================================================================
 [tool.pyright]
-# Mode: "basic" is forgiving; upgrade to "standard" or "strict" as types are added
-typeCheckingMode = "basic"
+# Use the same checker in VS Code and pre-commit, with local stubs for third-party typing gaps.
+typeCheckingMode = "standard"
 pythonVersion = "3.10"
 pythonPlatform = "All"
+stubPath = "typings"
 
 # Include/exclude paths
 include = ["video_compressor"]
 exclude = ["**/__pycache__", ".venv"]
 
 # Gradual typing: suppress errors for untyped code
+reportArgumentType = "error"
 reportMissingTypeStubs = "none"
 reportUnknownMemberType = "none"
 reportUnknownVariableType = "none"

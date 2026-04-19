@@ -86,7 +86,7 @@ class FileDropFrame(ctk.CTkFrame):
 
     def _setup_dnd(self):
         try:
-            import windnd
+            import windnd  # pyright: ignore[reportMissingModuleSource]
 
             windnd.hook_dropfiles(self._drop_frame, func=self._on_drop)
         except ImportError:
