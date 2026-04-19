@@ -6,7 +6,6 @@ and Issue #7 (Compression Execution & Progress Display) for video files.
 """
 
 import os
-import threading
 from pathlib import Path
 from tkinter import filedialog
 
@@ -57,9 +56,7 @@ class VideoView(ctk.CTkFrame):
         self._current_index = 0
         self._batch_successes = 0
         self._batch_failures = 0
-        self._batch_skipped = 0
-        self._pause_event = threading.Event()
-        self._pause_event.set()
+        self._is_paused = False
 
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=1)
@@ -455,8 +452,7 @@ class VideoView(ctk.CTkFrame):
         self._current_index = 0
         self._batch_successes = 0
         self._batch_failures = 0
-        self._batch_skipped = 0
-        self._pause_event.set()
+        self._is_paused = False
 
         self._progress_panel.reset()
         self._progress_panel.set_compressing(True)
@@ -482,6 +478,9 @@ class VideoView(ctk.CTkFrame):
         self._progress_panel.set_status_text(batch_info)
         self._progress_panel.update_overall_progress(current - 1, total)
 
+        if self._is_paused:
+            return
+
         output_folder = self._output_folder_entry.get() or ""
         if output_folder:
             output_path = str(Path(output_folder) / f"{input_p.stem}_compressed{input_p.suffix}")
@@ -493,8 +492,6 @@ class VideoView(ctk.CTkFrame):
         max_fps = _FPS_VALUES.get(fps_key)
         audio_bitrate = self._audio_bitrate_var.get()
         audio_enabled = not self._disable_audio_var.get()
-
-        self._pause_event.wait()
 
         if self._worker.is_running:
             return
@@ -560,15 +557,14 @@ class VideoView(ctk.CTkFrame):
         self._progress_panel.update_overall_progress(len(self._file_queue), len(self._file_queue))
 
         total = len(self._file_queue)
-        if self._batch_failures == 0 and self._batch_skipped == 0:
+        if self._batch_failures == 0:
             msg = t("batch.all_success", count=total)
             self._progress_panel.set_success_status(msg)
         else:
             msg = t(
-                "batch.summary_detail",
+                "batch.summary",
                 success=self._batch_successes,
                 failed=self._batch_failures,
-                skipped=self._batch_skipped,
             )
             self._progress_panel.set_summary_status(msg)
 
@@ -576,10 +572,13 @@ class VideoView(ctk.CTkFrame):
         self._worker.cancel()
 
     def _on_pause(self, is_paused: bool):
-        if is_paused:
-            self._pause_event.clear()
-        else:
-            self._pause_event.set()
+        self._is_paused = is_paused
+        if (
+            not is_paused
+            and not self._worker.is_running
+            and self._current_index < len(self._file_queue)
+        ):
+            self._process_next_file()
 
     def _on_progress(self, progress: dict):
         self.after(0, lambda: self._progress_panel.update_progress(progress))

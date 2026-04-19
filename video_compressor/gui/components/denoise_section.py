@@ -131,7 +131,6 @@ class DenoiseSection(ctk.CTkFrame):
 
     def refresh_texts(self):
         self._enable_check.configure(text=t("denoise.enable"))
-        self._preset_frame.winfo_children()
         for i, key in enumerate(_PRESET_KEYS):
             if i < len(self._preset_buttons):
                 self._preset_buttons[i].configure(text=t(f"denoise.presets.{key}"))
