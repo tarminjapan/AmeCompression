@@ -168,6 +168,22 @@ class ProgressPanel(ctk.CTkFrame):
         self._clear_errors()
         self.set_compressing(False)
 
+    def reset_progress_bar(self):
+        self._progress_bar.set(0)
+        self._stats_label.configure(text="")
+
+    def set_progress_bar_done(self):
+        self._progress_bar.set(1.0)
+
+    def set_status_text(self, text: str):
+        self._status_label.configure(text=text, text_color=("blue", "lightblue"))
+
+    def set_success_status(self, text: str):
+        self._status_label.configure(text=text, text_color=("green", "#90EE90"))
+
+    def set_summary_status(self, text: str):
+        self._status_label.configure(text=text, text_color=("orange", "orange"))
+
     def refresh_texts(self):
         self._start_btn.configure(text=t("compress.start"))
         self._cancel_btn.configure(text=t("compress.cancel"))

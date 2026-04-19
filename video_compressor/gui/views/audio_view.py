@@ -28,6 +28,10 @@ class AudioView(ctk.CTkFrame):
         super().__init__(master, **kwargs)
 
         self._worker = CompressionWorker()
+        self._file_queue: list[str] = []
+        self._current_index = 0
+        self._batch_successes = 0
+        self._batch_failures = 0
 
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=1)
@@ -287,8 +291,32 @@ class AudioView(ctk.CTkFrame):
         if not files:
             return
 
-        input_path = files[0]
+        self._file_queue = files
+        self._current_index = 0
+        self._batch_successes = 0
+        self._batch_failures = 0
+
+        self._progress_panel.reset()
+        self._progress_panel.set_compressing(True)
+        self._process_next_file()
+
+    def _process_next_file(self):
+        if self._current_index >= len(self._file_queue):
+            self._on_batch_complete()
+            return
+
+        input_path = self._file_queue[self._current_index]
         input_p = Path(input_path)
+        total = len(self._file_queue)
+        current = self._current_index + 1
+
+        batch_info = t(
+            "batch.processing_file",
+            current=current,
+            total=total,
+            filename=input_p.name,
+        )
+        self._progress_panel.set_status_text(batch_info)
 
         output_folder = self._output_folder_entry.get() or ""
         if output_folder:
@@ -301,50 +329,74 @@ class AudioView(ctk.CTkFrame):
         bitrate = f"{kbps}k"
         keep_metadata = self._keep_metadata_var.get()
 
-        self._progress_panel.reset()
-        self._progress_panel.set_compressing(True)
-
         self._worker.start_audio_compression(
             input_path=input_path,
             output_path=output_path,
             bitrate=bitrate,
             keep_metadata=keep_metadata,
             on_progress=self._on_progress,
-            on_complete=self._on_complete,
-            on_error=self._on_error,
+            on_complete=self._on_file_complete,
+            on_error=self._on_file_error,
         )
+
+    def _on_file_complete(self, result: dict):
+        self.after(0, lambda: self._handle_file_complete(result))
+
+    def _handle_file_complete(self, result: dict):
+        if result.get("status") == "cancelled":
+            self._progress_panel.set_complete(result)
+            return
+
+        if result.get("status") == "success":
+            self._batch_successes += 1
+        else:
+            self._batch_failures += 1
+
+        self._current_index += 1
+
+        if self._current_index < len(self._file_queue):
+            self._progress_panel.reset_progress_bar()
+            self._process_next_file()
+        else:
+            self._on_batch_complete()
+
+    def _on_file_error(self, error_msg: str):
+        self.after(0, lambda: self._handle_file_error(error_msg))
+
+    def _handle_file_error(self, error_msg: str):
+        self._batch_failures += 1
+        self._progress_panel.add_error_log(
+            f"{Path(self._file_queue[self._current_index]).name}: {error_msg}"
+        )
+        self._current_index += 1
+
+        if self._current_index < len(self._file_queue):
+            self._progress_panel.reset_progress_bar()
+            self._process_next_file()
+        else:
+            self._on_batch_complete()
+
+    def _on_batch_complete(self):
+        self._progress_panel.set_compressing(False)
+        self._progress_panel.set_progress_bar_done()
+
+        total = len(self._file_queue)
+        if self._batch_failures == 0:
+            msg = t("batch.all_success", count=total)
+            self._progress_panel.set_success_status(msg)
+        else:
+            msg = t(
+                "batch.summary",
+                success=self._batch_successes,
+                failed=self._batch_failures,
+            )
+            self._progress_panel.set_summary_status(msg)
 
     def _cancel_compression(self):
         self._worker.cancel()
 
     def _on_progress(self, progress: dict):
         self.after(0, lambda: self._progress_panel.update_progress(progress))
-
-    def _on_complete(self, result: dict):
-        self.after(0, lambda: self._handle_complete(result))
-
-    def _handle_complete(self, result: dict):
-        self._progress_panel.set_complete(result)
-
-        if result.get("status") == "success":
-            files = self._file_list.get_file_paths()
-            if files:
-                input_path = Path(files[0])
-                output_folder = self._output_folder_entry.get() or ""
-                if output_folder:
-                    output_path = Path(output_folder) / f"{input_path.stem}_compressed.mp3"
-                else:
-                    output_path = input_path.parent / f"{input_path.stem}_compressed.mp3"
-
-                try:
-                    original_size = input_path.stat().st_size / (1024 * 1024)
-                    compressed_size = output_path.stat().st_size / (1024 * 1024)
-                    self._progress_panel.set_result(original_size, compressed_size)
-                except OSError:
-                    pass
-
-    def _on_error(self, error_msg: str):
-        self.after(0, lambda: self._progress_panel.set_error(error_msg))
 
     def refresh_texts(self):
         self._file_drop.refresh_texts()

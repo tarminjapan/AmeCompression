@@ -151,6 +151,12 @@
         "output_exists": "出力ファイルが既に存在します: {path}",
         "compression_failed": "圧縮に失敗しました: {error}",
         "no_input": "入力ファイルが指定されていません。",
-        "permission_denied": "アクセス権限がありません: {path}"
+        "permission_denied": "アクセス権限がありません: {path}",
+        "ffmpeg_exit": "FFmpegがコード {code} で終了しました"
+    },
+    "batch": {
+        "processing_file": "処理中 {current}/{total}: {filename}",
+        "summary": "バッチ完了: {success} 件成功, {failed} 件失敗",
+        "all_success": "{count} 件すべてのファイルの圧縮に成功しました！"
     }
 }

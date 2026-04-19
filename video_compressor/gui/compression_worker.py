@@ -8,10 +8,12 @@ and reports progress via callbacks, keeping the GUI responsive.
 import re
 import subprocess
 import threading
+import time
 from collections.abc import Callable
 
 from ..config import AUDIO_CODEC, MP3_CODEC, VIDEO_CODEC
 from ..ffmpeg import get_audio_info, get_ffmpeg_executables, get_video_info
+from .i18n import t
 
 
 class CompressionWorker:
@@ -132,6 +134,7 @@ class CompressionWorker:
             self._process.terminate()
 
     def _run_ffmpeg(self, cmd, total_duration, on_progress, on_complete, on_error):
+        start_time = time.time()
         try:
             self._process = subprocess.Popen(
                 cmd,
@@ -147,7 +150,7 @@ class CompressionWorker:
                     if self._cancelled:
                         break
 
-                    progress = self._parse_progress(line, total_duration)
+                    progress = self._parse_progress(line, total_duration, start_time)
                     if progress and on_progress:
                         on_progress(progress)
 
@@ -163,10 +166,10 @@ class CompressionWorker:
             else:
                 if on_error:
                     code = self._process.returncode if self._process else -1
-                    on_error(f"FFmpeg exited with code {code}")
+                    on_error(t("errors.ffmpeg_exit", code=code))
         except FileNotFoundError:
             if on_error:
-                on_error("FFmpeg not found. Please install FFmpeg or set the path in Settings.")
+                on_error(t("errors.ffmpeg_not_found"))
         except Exception as e:
             if on_error:
                 on_error(str(e))
@@ -174,7 +177,7 @@ class CompressionWorker:
             self._process = None
 
     @staticmethod
-    def _parse_progress(line: str, total_duration: float) -> dict | None:
+    def _parse_progress(line: str, total_duration: float, start_time: float) -> dict | None:
         time_match = re.search(r"time=(\d+):(\d+):(\d+\.?\d*)", line)
         if not time_match or total_duration <= 0:
             return None
@@ -201,15 +204,9 @@ class CompressionWorker:
             frame = int(frame_match.group(1))
 
         eta = 0.0
-        elapsed_match = re.search(r"elapsed=(\d+):(\d+):(\d+\.?\d*)", line)
-        if elapsed_match and percent > 0:
-            elapsed = (
-                int(elapsed_match.group(1)) * 3600
-                + int(elapsed_match.group(2)) * 60
-                + float(elapsed_match.group(3))
-            )
-            if percent < 100:
-                eta = elapsed * (100 - percent) / percent
+        elapsed_wall = time.time() - start_time
+        if 0 < percent < 100 and elapsed_wall > 0:
+            eta = elapsed_wall * (100 - percent) / percent
 
         return {
             "percent": percent,

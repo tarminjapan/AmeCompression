@@ -151,6 +151,12 @@
         "output_exists": "Output file already exists: {path}",
         "compression_failed": "Compression failed: {error}",
         "no_input": "No input file specified.",
-        "permission_denied": "Permission denied: {path}"
+        "permission_denied": "Permission denied: {path}",
+        "ffmpeg_exit": "FFmpeg exited with code {code}"
+    },
+    "batch": {
+        "processing_file": "Processing {current}/{total}: {filename}",
+        "summary": "Batch Complete: {success} succeeded, {failed} failed",
+        "all_success": "All {count} file(s) compressed successfully!"
     }
 }
