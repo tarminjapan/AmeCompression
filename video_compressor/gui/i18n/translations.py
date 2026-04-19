@@ -17,27 +17,12 @@ Usage:
 
 import json
 import os
-import sys
 from pathlib import Path
+
+from ..utils import SettingsManager
 
 _DEFAULT_LANGUAGE = "en"
 _SUPPORTED_LANGUAGES = ("en", "ja")
-_SETTINGS_FILENAME = "settings.json"
-
-
-def _get_config_dir():
-    """Return the platform-specific configuration directory.
-
-    Returns:
-        Path: Directory for storing application settings.
-    """
-    if sys.platform == "win32":
-        base = Path(os.environ.get("APPDATA", Path.home()))
-    elif sys.platform == "darwin":
-        base = Path.home() / "Library" / "Application Support"
-    else:
-        base = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
-    return base / "AmeCompression"
 
 
 def _get_translations_dir():
@@ -67,7 +52,7 @@ class TranslationManager:
         self._translations = {}
         self._current_lang = _DEFAULT_LANGUAGE
         self._translations_dir = _get_translations_dir()
-        self._config_dir = _get_config_dir()
+        self._settings = SettingsManager.get_instance()
         self._load_all_translations()
         self._load_language_preference()
 
@@ -117,36 +102,13 @@ class TranslationManager:
             self._current_lang = env_lang
             return
 
-        settings_path = self._config_dir / _SETTINGS_FILENAME
-        if settings_path.is_file():
-            try:
-                with open(settings_path, encoding="utf-8") as f:
-                    settings = json.load(f)
-                saved_lang = settings.get("language")
-                if saved_lang and saved_lang in _SUPPORTED_LANGUAGES:
-                    self._current_lang = saved_lang
-                    return
-            except (json.JSONDecodeError, OSError):
-                pass
+        saved_lang = self._settings.get("language")
+        if saved_lang and saved_lang in _SUPPORTED_LANGUAGES:
+            self._current_lang = saved_lang
 
     def _save_language_preference(self):
         """Persist the current language selection to the settings file."""
-        settings_path = self._config_dir / _SETTINGS_FILENAME
-        settings = {}
-        if settings_path.is_file():
-            try:
-                with open(settings_path, encoding="utf-8") as f:
-                    settings = json.load(f)
-            except (json.JSONDecodeError, OSError):
-                settings = {}
-
-        settings["language"] = self._current_lang
-        try:
-            self._config_dir.mkdir(parents=True, exist_ok=True)
-            with open(settings_path, "w", encoding="utf-8") as f:
-                json.dump(settings, f, indent=2, ensure_ascii=False)
-        except OSError:
-            pass
+        self._settings.set("language", self._current_lang)
 
     def _resolve_key(self, data, key):
         """Resolve a dot-notation key against a nested dictionary.
