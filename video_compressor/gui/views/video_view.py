@@ -11,9 +11,11 @@ from tkinter import filedialog
 
 import customtkinter as ctk
 
+from ..components.denoise_section import DenoiseSection
 from ..components.file_drop_frame import FileDropFrame
 from ..components.file_list import FileListFrame
 from ..components.progress_panel import ProgressPanel
+from ..components.volume_section import VolumeSection
 from ..compression_worker import CompressionWorker
 from ..i18n import t
 from ..theme.fonts import DEFAULT_FONT_FAMILY
@@ -54,6 +56,7 @@ class VideoView(ctk.CTkFrame):
         self._current_index = 0
         self._batch_successes = 0
         self._batch_failures = 0
+        self._is_paused = False
 
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=1)
@@ -125,6 +128,8 @@ class VideoView(ctk.CTkFrame):
         row = self._create_crf_slider(row)
         row = self._create_preset_slider(row)
         row = self._create_options_grid(row)
+        row = self._create_volume_section(row)
+        row = self._create_denoise_section(row)
         row = self._create_output_preview(row)
         row = self._create_validation(row)
 
@@ -306,6 +311,23 @@ class VideoView(ctk.CTkFrame):
 
         return row + 1
 
+    def _create_volume_section(self, row: int) -> int:
+        self._volume_section = VolumeSection(
+            self._settings_frame,
+            get_current_file=self._get_first_file,
+        )
+        self._volume_section.grid(row=row, column=0, sticky="ew")
+        return row + 1
+
+    def _create_denoise_section(self, row: int) -> int:
+        self._denoise_section = DenoiseSection(self._settings_frame)
+        self._denoise_section.grid(row=row, column=0, sticky="ew")
+        return row + 1
+
+    def _get_first_file(self) -> str | None:
+        files = self._file_list.get_file_paths()
+        return files[0] if files else None
+
     def _create_validation(self, row: int) -> int:
         self._error_label = ctk.CTkLabel(
             self._settings_frame,
@@ -322,6 +344,7 @@ class VideoView(ctk.CTkFrame):
             self,
             on_start=self._start_compression,
             on_cancel=self._cancel_compression,
+            on_pause=self._on_pause,
         )
         self._progress_panel.grid(row=2, column=0, sticky="ew")
 
@@ -429,9 +452,11 @@ class VideoView(ctk.CTkFrame):
         self._current_index = 0
         self._batch_successes = 0
         self._batch_failures = 0
+        self._is_paused = False
 
         self._progress_panel.reset()
         self._progress_panel.set_compressing(True)
+        self._progress_panel.update_overall_progress(0, len(self._file_queue))
         self._process_next_file()
 
     def _process_next_file(self):
@@ -451,6 +476,10 @@ class VideoView(ctk.CTkFrame):
             filename=input_p.name,
         )
         self._progress_panel.set_status_text(batch_info)
+        self._progress_panel.update_overall_progress(current - 1, total)
+
+        if self._is_paused:
+            return
 
         output_folder = self._output_folder_entry.get() or ""
         if output_folder:
@@ -464,6 +493,9 @@ class VideoView(ctk.CTkFrame):
         audio_bitrate = self._audio_bitrate_var.get()
         audio_enabled = not self._disable_audio_var.get()
 
+        if self._worker.is_running:
+            return
+
         self._worker.start_video_compression(
             input_path=input_path,
             output_path=output_path,
@@ -473,6 +505,8 @@ class VideoView(ctk.CTkFrame):
             audio_enabled=audio_enabled,
             max_fps=max_fps,
             resolution=resolution,
+            volume_gain_db=self._volume_section.get_volume_gain_db(),
+            denoise_level=self._denoise_section.get_level(),
             on_progress=self._on_progress,
             on_complete=self._on_file_complete,
             on_error=self._on_file_error,
@@ -492,6 +526,7 @@ class VideoView(ctk.CTkFrame):
             self._batch_failures += 1
 
         self._current_index += 1
+        self._progress_panel.update_overall_progress(self._current_index, len(self._file_queue))
 
         if self._current_index < len(self._file_queue):
             self._progress_panel.reset_progress_bar()
@@ -508,6 +543,7 @@ class VideoView(ctk.CTkFrame):
             f"{Path(self._file_queue[self._current_index]).name}: {error_msg}"
         )
         self._current_index += 1
+        self._progress_panel.update_overall_progress(self._current_index, len(self._file_queue))
 
         if self._current_index < len(self._file_queue):
             self._progress_panel.reset_progress_bar()
@@ -518,6 +554,7 @@ class VideoView(ctk.CTkFrame):
     def _on_batch_complete(self):
         self._progress_panel.set_compressing(False)
         self._progress_panel.set_progress_bar_done()
+        self._progress_panel.update_overall_progress(len(self._file_queue), len(self._file_queue))
 
         total = len(self._file_queue)
         if self._batch_failures == 0:
@@ -534,6 +571,15 @@ class VideoView(ctk.CTkFrame):
     def _cancel_compression(self):
         self._worker.cancel()
 
+    def _on_pause(self, is_paused: bool):
+        self._is_paused = is_paused
+        if (
+            not is_paused
+            and not self._worker.is_running
+            and self._current_index < len(self._file_queue)
+        ):
+            self._process_next_file()
+
     def _on_progress(self, progress: dict):
         self.after(0, lambda: self._progress_panel.update_progress(progress))
 
@@ -543,6 +589,8 @@ class VideoView(ctk.CTkFrame):
         self._output_folder_label.configure(text=t("file.output_folder"))
         self._output_browse_btn.configure(text=t("file.browse"))
         self._progress_panel.refresh_texts()
+        self._volume_section.refresh_texts()
+        self._denoise_section.refresh_texts()
 
         self._resolution_labels = [t(f"video_settings.resolution.{k}") for k in _RESOLUTION_KEYS]
         current_res_idx = _RESOLUTION_KEYS.index(self._get_resolution_key())
