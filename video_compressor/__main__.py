@@ -11,9 +11,8 @@ import sys
 
 def main():
     if "--gui" in sys.argv:
-        sys.argv.remove("--gui")
         try:
-            from gui.app import run_gui
+            from .gui.app import run_gui
 
             run_gui()
         except ImportError:

@@ -4,8 +4,7 @@ Main GUI application for AmeCompression using CustomTkinter.
 
 import customtkinter as ctk
 
-from video_compressor import __version__
-
+from .. import __version__
 from .i18n import t
 
 
@@ -40,10 +39,9 @@ class App(ctk.CTk):
         self._create_status_bar()
 
     def _create_header(self):
-        header = ctk.CTkFrame(self, corner_radius=0, height=50)
+        header = ctk.CTkFrame(self, corner_radius=0)
         header.grid(row=0, column=0, sticky="ew")
         header.grid_columnconfigure(1, weight=1)
-        header.grid_propagate(False)
 
         title_label = ctk.CTkLabel(
             header,
@@ -81,9 +79,8 @@ class App(ctk.CTk):
         welcome_label.grid(row=0, column=0, padx=20, pady=20)
 
     def _create_status_bar(self):
-        status_frame = ctk.CTkFrame(self, corner_radius=0, height=28)
+        status_frame = ctk.CTkFrame(self, corner_radius=0)
         status_frame.grid(row=2, column=0, sticky="ew")
-        status_frame.grid_propagate(False)
 
         status_label = ctk.CTkLabel(
             status_frame,
