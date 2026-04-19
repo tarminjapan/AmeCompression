@@ -45,6 +45,7 @@ class App(ctk.CTk):
         self._current_view_name: str | None = None
         self._current_view: ctk.CTkFrame | None = None
         self._views: dict[str, ctk.CTkFrame] = {}
+        self._ffmpeg_detected: bool | None = None
 
         self._create_layout()
         self._create_header()
@@ -184,12 +185,14 @@ class App(ctk.CTk):
         return t(f"settings.themes.{self._current_theme}")
 
     def _detect_ffmpeg(self) -> str:
-        try:
-            ffmpeg_path, _ = get_ffmpeg_executables()
-            if ffmpeg_path and shutil.which(ffmpeg_path):
-                return t("status.ffmpeg_detected")
-        except Exception:
-            pass
+        if self._ffmpeg_detected is None:
+            try:
+                ffmpeg_path, _ = get_ffmpeg_executables()
+                self._ffmpeg_detected = bool(ffmpeg_path and shutil.which(ffmpeg_path))
+            except Exception:
+                self._ffmpeg_detected = False
+        if self._ffmpeg_detected:
+            return t("status.ffmpeg_detected")
         return t("status.ffmpeg_not_found")
 
     def _refresh_ui_texts(self):
@@ -208,6 +211,11 @@ class App(ctk.CTk):
         for key, translation_key in nav_items:
             if key in self._nav_buttons:
                 self._nav_buttons[key].configure(text=t(translation_key))
+
+        for view in self._views.values():
+            refresh = getattr(view, "refresh_texts", None)
+            if callable(refresh):
+                refresh()
 
 
 def run_gui():

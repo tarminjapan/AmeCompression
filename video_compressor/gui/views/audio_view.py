@@ -16,9 +16,12 @@ class AudioView(ctk.CTkFrame):
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
 
-        label = ctk.CTkLabel(
+        self._label = ctk.CTkLabel(
             self,
             text=t("nav.audio"),
             font=ctk.CTkFont(family=DEFAULT_FONT_FAMILY, size=18, weight="bold"),
         )
-        label.grid(row=0, column=0)
+        self._label.grid(row=0, column=0)
+
+    def refresh_texts(self):
+        self._label.configure(text=t("nav.audio"))
