@@ -30,6 +30,8 @@
     },
     "video_settings": {
         "title": "Video Compression Settings",
+        "video_section": "Video",
+        "audio_section": "Audio",
         "crf": "CRF (Quality)",
         "crf_range": "Lower = Higher Quality / Larger File",
         "preset": "Encoding Preset",

@@ -30,6 +30,8 @@
     },
     "video_settings": {
         "title": "動画圧縮設定",
+        "video_section": "ビデオ",
+        "audio_section": "オーディオ",
         "crf": "CRF（品質）",
         "crf_range": "低い = 高品質 / 大きいファイル",
         "preset": "エンコードプリセット",

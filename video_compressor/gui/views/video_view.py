@@ -132,8 +132,9 @@ class VideoView(ctk.CTkFrame):
         ).grid(row=row, column=0, columnspan=2, padx=10, pady=(10, 5), sticky="w")
         row += 1
 
-        row = self._create_video_column(row)
-        row = self._create_audio_column(row)
+        self._create_video_column(row)
+        self._create_audio_column(row)
+        row += 1
         row = self._create_volume_section(row)
         row = self._create_denoise_section(row)
         row = self._create_output_preview(row)
@@ -146,7 +147,7 @@ class VideoView(ctk.CTkFrame):
 
         ctk.CTkLabel(
             video_frame,
-            text="Video",
+            text=t("video_settings.video_section"),
             font=ctk.CTkFont(family=DEFAULT_FONT_FAMILY, size=13, weight="bold"),
         ).grid(row=0, column=0, sticky="w", pady=(0, 5))
 
@@ -287,7 +288,7 @@ class VideoView(ctk.CTkFrame):
 
         ctk.CTkLabel(
             audio_frame,
-            text="Audio",
+            text=t("video_settings.audio_section"),
             font=ctk.CTkFont(family=DEFAULT_FONT_FAMILY, size=13, weight="bold"),
         ).grid(row=0, column=0, sticky="w", pady=(0, 5))
 
@@ -447,17 +448,24 @@ class VideoView(ctk.CTkFrame):
                 return key
         return "unlimited"
 
+    def _get_audio_bitrate_value(self) -> str:
+        value = self._audio_bitrate_var.get().strip()
+        if not value:
+            return "192k"
+        if value.lower().endswith("k"):
+            return value
+        if value.isdigit():
+            return f"{value}k"
+        return value
+
     def _get_max_fps_value(self) -> int | None:
         value = self._fps_var.get().strip()
         for i, key in enumerate(_FPS_KEYS):
             if i < len(self._fps_labels) and value == self._fps_labels[i]:
                 return _FPS_VALUES.get(key)
         try:
-            return int(float(value))
-        except ValueError:
-            pass
-        try:
-            return int(float(value.replace(" FPS", "").strip()))
+            clean_value = value.upper().replace("FPS", "").strip()
+            return int(float(clean_value))
         except ValueError:
             pass
         return None
@@ -539,7 +547,7 @@ class VideoView(ctk.CTkFrame):
 
         resolution = self._get_resolution_value()
         max_fps = self._get_max_fps_value()
-        audio_bitrate = self._audio_bitrate_var.get()
+        audio_bitrate = self._get_audio_bitrate_value()
         audio_enabled = not self._disable_audio_var.get()
 
         if self._worker.is_running:
