@@ -6,6 +6,7 @@ that can be used by CLI, GUI, and API layers.
 """
 
 import re
+import time
 from abc import ABC, abstractmethod
 from typing import Protocol
 
@@ -78,12 +79,11 @@ class ProgressParser:
         """
         self.start_time = start_time
 
-    def parse_line(self, line: str, current_time: float = 0.0) -> ProgressEvent | None:
+    def parse_line(self, line: str) -> ProgressEvent | None:
         """Parse a single FFmpeg output line into a progress event.
 
         Args:
             line: FFmpeg output line
-            current_time: Override for current time (for testing)
 
         Returns:
             ProgressEvent if progress was parsed, None otherwise
@@ -98,9 +98,9 @@ class ProgressParser:
         hours = int(time_match.group(1))
         minutes = int(time_match.group(2))
         seconds = float(time_match.group(3))
-        current_time = hours * 3600 + minutes * 60 + seconds
+        media_time = hours * 3600 + minutes * 60 + seconds
 
-        percent = min(100.0, (current_time / self.total_duration) * 100)
+        percent = min(100.0, (media_time / self.total_duration) * 100)
 
         fps = 0.0
         fps_match = re.search(r"fps=\s*([\d.]+)", line)
@@ -119,7 +119,7 @@ class ProgressParser:
 
         eta = 0.0
         if 0 < percent < 100 and self.start_time > 0:
-            elapsed_wall = current_time - self.start_time
+            elapsed_wall = time.time() - self.start_time
             if elapsed_wall > 0:
                 eta = elapsed_wall * (100 - percent) / percent
 
@@ -129,7 +129,7 @@ class ProgressParser:
 
         return ProgressEvent(
             percent=percent,
-            current_time=current_time,
+            current_time=media_time,
             total_duration=self.total_duration,
             fps=fps,
             speed=speed,

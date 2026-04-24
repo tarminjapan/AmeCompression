@@ -18,7 +18,7 @@ from .config import (
     MP3_CODEC,
     TARGET_VOLUME_LEVEL,
 )
-from .ffmpeg import get_audio_info
+from .ffmpeg import get_audio_info, get_audio_info_safe
 from .models import (
     AudioCompressionResult,
     CompressionStatus,
@@ -350,7 +350,7 @@ def compress_audio_service(
         if output_path.suffix.lower() != ".mp3":
             output_path = output_path.with_suffix(".mp3")
 
-    audio_info = get_audio_info(input_path, ffprobe_path)
+    audio_info = get_audio_info_safe(input_path, ffprobe_path)
 
     total_duration = audio_info["duration"] or 0
     original_bitrate = audio_info["bitrate"]
@@ -404,6 +404,7 @@ def compress_audio_service(
             for line in process.stdout:
                 if cancellation_source and cancellation_source.is_cancelled:
                     process.terminate()
+                    process.wait()
                     return AudioCompressionResult(
                         status=CompressionStatus.CANCELLED,
                         input_path=str(input_path),
@@ -480,6 +481,7 @@ def compress_audio_service(
     finally:
         if process and process.poll() is None:
             process.terminate()
+            process.wait()
 
 
 def analyze_audio_volume_service(

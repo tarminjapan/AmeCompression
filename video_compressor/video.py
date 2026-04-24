@@ -19,7 +19,7 @@ from .config import (
     VIDEO_CODEC,
     VIDEO_PRESET,
 )
-from .ffmpeg import get_detailed_media_info, get_video_info
+from .ffmpeg import get_detailed_media_info, get_video_info, get_video_info_safe
 from .models import (
     CompressionStatus,
     VideoCompressionResult,
@@ -672,7 +672,7 @@ def compress_video_service(
     else:
         output_path = Path(output_path)
 
-    video_info = get_video_info(input_path, ffprobe_path)
+    video_info = get_video_info_safe(input_path, ffprobe_path)
 
     if not video_info:
         return VideoCompressionResult(
@@ -685,6 +685,7 @@ def compress_video_service(
     original_height = video_info["height"]
     original_fps = video_info["fps"]
     total_duration = video_info["duration"] or 0
+    output_fps = max_fps if max_fps is not None else original_fps
 
     custom_max_width = None
     custom_max_height = None
@@ -770,6 +771,7 @@ def compress_video_service(
             for line in process.stdout:
                 if cancellation_source and cancellation_source.is_cancelled:
                     process.terminate()
+                    process.wait()
                     return VideoCompressionResult(
                         status=CompressionStatus.CANCELLED,
                         input_path=str(input_path),
@@ -778,7 +780,7 @@ def compress_video_service(
                         duration=total_duration,
                         width=scaled_res[0] if scaled_res else original_width,
                         height=scaled_res[1] if scaled_res else original_height,
-                        fps=original_fps,
+                        fps=output_fps,
                         video_codec=VIDEO_CODEC,
                         audio_codec=AUDIO_CODEC if audio_enabled else "",
                         crf=crf,
@@ -811,7 +813,7 @@ def compress_video_service(
                 duration=total_duration,
                 width=scaled_res[0] if scaled_res else original_width,
                 height=scaled_res[1] if scaled_res else original_height,
-                fps=original_fps,
+                fps=output_fps,
                 video_codec=VIDEO_CODEC,
                 audio_codec=AUDIO_CODEC if audio_enabled else "",
                 crf=crf,
@@ -855,6 +857,7 @@ def compress_video_service(
     finally:
         if process and process.poll() is None:
             process.terminate()
+            process.wait()
 
 
 def analyze_volume_service(
