@@ -8,7 +8,6 @@ Implements Issue #36 (Video / Audio screen integration) and
 Issue #37 (UI improvements).
 """
 
-import os
 import threading
 from pathlib import Path
 from tkinter import filedialog
@@ -555,21 +554,23 @@ class VideoAudioView(ctk.CTkFrame):
             return "audio"
         return "video"
 
+    def _get_output_path(self, input_path: str) -> str:
+        input_p = Path(input_path)
+        output_folder = self._output_folder_entry.get() or str(input_p.parent)
+        file_type = self._get_file_type(input_path)
+        if file_type == "audio":
+            output_name = f"{input_p.stem}_compressed.mp3"
+        else:
+            output_name = f"{input_p.stem}_compressed{input_p.suffix}"
+        return str(Path(output_folder) / output_name)
+
     def _update_preview(self):
         files = self._file_list.get_file_paths()
         if not files:
             self._preview_label.configure(text="\u2014")
             return
 
-        input_path = Path(files[0])
-        file_type = self._get_file_type(files[0])
-        if file_type == "audio":
-            output_name = f"{input_path.stem}_compressed.mp3"
-        else:
-            output_name = f"{input_path.stem}_compressed{input_path.suffix}"
-
-        output_folder = self._output_folder_entry.get() or str(input_path.parent)
-        preview = os.path.join(output_folder, output_name)
+        preview = self._get_output_path(files[0])
         if len(preview) > 55:
             preview = "..." + preview[-52:]
         self._preview_label.configure(text=preview)
@@ -580,43 +581,49 @@ class VideoAudioView(ctk.CTkFrame):
             self._info_label.configure(text="\u2014")
             return
 
-        first_audio = None
-        for f in files:
-            if self._get_file_type(f) == "audio":
-                first_audio = f
-                break
-        if first_audio is None:
-            self._info_label.configure(text="\u2014")
-            return
+        first_file = files[0]
 
         def fetch_info():
             try:
-                from ...ffmpeg import get_audio_info, get_ffmpeg_executables
+                from ...ffmpeg import get_audio_info, get_ffmpeg_executables, get_video_info
 
                 _, ffprobe_path = get_ffmpeg_executables()
-                info = get_audio_info(first_audio, ffprobe_path)
-
+                file_type = self._get_file_type(first_file)
                 parts: list[str] = []
-                ext = Path(first_audio).suffix.upper().lstrip(".")
+                ext = Path(first_file).suffix.upper().lstrip(".")
                 parts.append(ext)
-                if info.get("bitrate"):
-                    parts.append(f"{info['bitrate'] // 1000} kbps")
-                if info.get("sample_rate"):
-                    parts.append(f"{info['sample_rate']} Hz")
-                if info.get("channels"):
-                    ch = info["channels"]
-                    ch_str = (
-                        t("common.mono")
-                        if ch == 1
-                        else t("common.stereo")
-                        if ch == 2
-                        else t("common.channels", count=ch)
-                    )
-                    parts.append(ch_str)
-                if info.get("duration"):
-                    dur = info["duration"]
-                    m, s = int(dur // 60), dur % 60
-                    parts.append(f"{m:02d}:{s:04.1f}")
+
+                if file_type == "audio":
+                    info = get_audio_info(first_file, ffprobe_path)
+                    if info.get("bitrate"):
+                        parts.append(f"{info['bitrate'] // 1000} kbps")
+                    if info.get("sample_rate"):
+                        parts.append(f"{info['sample_rate']} Hz")
+                    if info.get("channels"):
+                        ch = info["channels"]
+                        ch_str = (
+                            t("common.mono")
+                            if ch == 1
+                            else t("common.stereo")
+                            if ch == 2
+                            else t("common.channels", count=ch)
+                        )
+                        parts.append(ch_str)
+                    if info.get("duration"):
+                        dur = info["duration"]
+                        m, s = int(dur // 60), dur % 60
+                        parts.append(f"{m:02d}:{s:04.1f}")
+                else:
+                    info = get_video_info(first_file, ffprobe_path)
+                    if info:
+                        if info.get("width") and info.get("height"):
+                            parts.append(f"{info['width']}x{info['height']}")
+                        if info.get("fps"):
+                            parts.append(f"{info['fps']:.2f} FPS")
+                    if info and info.get("duration"):
+                        dur = info["duration"]
+                        m, s = int(dur // 60), dur % 60
+                        parts.append(f"{m:02d}:{s:04.1f}")
 
                 text = " | ".join(parts) if parts else "\u2014"
                 self.after(0, lambda: self._info_label.configure(text=text))
@@ -736,21 +743,11 @@ class VideoAudioView(ctk.CTkFrame):
             return
 
         file_type = self._get_file_type(input_path)
-        output_folder = self._output_folder_entry.get() or ""
+        output_path = self._get_output_path(input_path)
 
         if file_type == "audio":
-            if output_folder:
-                output_path = str(Path(output_folder) / f"{input_p.stem}_compressed.mp3")
-            else:
-                output_path = str(input_p.parent / f"{input_p.stem}_compressed.mp3")
             self._start_audio_file(input_path, output_path)
         else:
-            if output_folder:
-                output_path = str(
-                    Path(output_folder) / f"{input_p.stem}_compressed{input_p.suffix}"
-                )
-            else:
-                output_path = str(input_p.parent / f"{input_p.stem}_compressed{input_p.suffix}")
             self._start_video_file(input_path, output_path)
 
     def _start_video_file(self, input_path: str, output_path: str):
