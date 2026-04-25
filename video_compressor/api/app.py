@@ -1,3 +1,5 @@
+import time
+
 from flask import Flask
 from flask_cors import CORS
 
@@ -31,8 +33,6 @@ def create_app(config_name="dev"):
     # Add a root health check for convenience
     @app.route("/api/health")
     def root_health():
-        import time
-
         return {"status": "healthy", "timestamp": time.time(), "version": "1.0.0"}
 
     # Register root_health explicitly is not needed as decorator does it,

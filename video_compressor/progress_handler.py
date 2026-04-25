@@ -7,11 +7,22 @@ that can be used by CLI, GUI, and API layers.
 from __future__ import annotations
 
 import re
+import sys
 import time
 from abc import ABC, abstractmethod
 from typing import Any, Protocol
 
+from .config import PROGRESS_BAR_LENGTH
 from .models import ProgressEvent
+from .utils import (
+    BOLD,
+    CYAN,
+    DIM,
+    GREEN,
+    RESET,
+    YELLOW,
+    format_time,
+)
 
 
 class ProgressCallback(Protocol):
@@ -202,19 +213,6 @@ class CLIProgressReporter(ProgressReporter):
 
     def report(self, event: ProgressEvent) -> None:
         """Report progress to CLI."""
-        import sys
-
-        from .config import PROGRESS_BAR_LENGTH
-        from .utils import (
-            BOLD,
-            CYAN,
-            DIM,
-            GREEN,
-            RESET,
-            YELLOW,
-            format_time,
-        )
-
         if event.percent <= 0:
             return
 
@@ -250,11 +248,6 @@ class CLIProgressReporter(ProgressReporter):
 
     def report_complete(self) -> None:
         """Report completion to CLI."""
-        import sys
-
-        from .config import PROGRESS_BAR_LENGTH
-        from .utils import BOLD, DIM, GREEN, RESET, format_time
-
         bar = "█" * PROGRESS_BAR_LENGTH
         total_str = format_time(self.total_duration)
 

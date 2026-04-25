@@ -4,7 +4,7 @@ import re
 from pathlib import Path
 
 from . import __version__
-from .config import AUDIO_EXTENSIONS, VIDEO_EXTENSIONS
+from .config import AUDIO_EXTENSIONS, MAX_HEIGHT, MAX_WIDTH, VIDEO_EXTENSIONS
 
 # ============================================
 # ASCII Art Banner
@@ -132,8 +132,6 @@ def calculate_scaled_resolution(width, height, max_width=None, max_height=None):
     Returns:
         tuple: (scaled_width, scaled_height) or None if scaling not needed
     """
-    from .config import MAX_HEIGHT, MAX_WIDTH
-
     # Set default values
     if max_width is None:
         max_width = MAX_WIDTH

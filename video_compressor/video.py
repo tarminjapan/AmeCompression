@@ -15,6 +15,7 @@ from .config import (
     DEFAULT_AUDIO_BITRATE,
     DEFAULT_CRF,
     MAX_AUDIO_BITRATE,
+    TARGET_VOLUME_LEVEL,
     VIDEO_CODEC,
     VIDEO_PRESET,
 )
@@ -307,8 +308,6 @@ def compress_video(
         ffmpeg_path (str): Path to ffmpeg executable
         ffprobe_path (str): Path to ffprobe executable
     """
-    from .config import TARGET_VOLUME_LEVEL
-
     # Set default values
     if crf is None:
         crf = DEFAULT_CRF
@@ -823,8 +822,6 @@ def analyze_volume_service(
     Returns:
         VolumeAnalysisResult with volume information
     """
-    from .config import TARGET_VOLUME_LEVEL
-
     input_path = Path(input_path)
 
     if not input_path.exists():
