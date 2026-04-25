@@ -45,7 +45,7 @@ function App() {
 
   const fetchMediaInfo = async (path: string) => {
     try {
-      const response = await axios.get(`${API_BASE}/info?path=${encodeURIComponent(path)}`);
+      const response = await axios.get(`${API_BASE}/media-info?path=${encodeURIComponent(path)}`);
       setMediaInfo(response.data);
     } catch (error) {
       console.error('Failed to fetch media info', error);
@@ -61,7 +61,7 @@ function App() {
     setProgress(null);
 
     try {
-      const response = await axios.post(`${API_BASE}/compress/video`, {
+      const response = await axios.post(`${API_BASE}/jobs/video`, {
         input_path: inputPath,
         crf,
         preset,
@@ -77,7 +77,7 @@ function App() {
   const cancelCompression = async () => {
     if (!taskId) return;
     try {
-      await axios.post(`${API_BASE}/cancel/${taskId}`);
+      await axios.delete(`${API_BASE}/jobs/${taskId}`);
     } catch (error) {
       console.error('Failed to cancel compression', error);
     }
@@ -89,7 +89,7 @@ function App() {
     if (taskId && (status === 'running' || status === 'starting')) {
       interval = window.setInterval(async () => {
         try {
-          const response = await axios.get(`${API_BASE}/status/${taskId}`);
+          const response = await axios.get(`${API_BASE}/jobs/${taskId}`);
           const data = response.data;
           
           setStatus(data.status);
