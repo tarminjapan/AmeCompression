@@ -25,7 +25,7 @@ const SettingsView: React.FC = () => {
   const fetchSettings = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${API_BASE}/settings`);
+      const response = await axios.get<AppSettings>(`${API_BASE}/settings`);
       setSettings(response.data);
     } catch (error) {
       console.error('Failed to fetch settings', error);
@@ -37,7 +37,7 @@ const SettingsView: React.FC = () => {
   const saveSettings = async () => {
     setSaving(true);
     try {
-      await axios.post(`${API_BASE}/settings`, settings);
+      await axios.post<void>(`${API_BASE}/settings`, settings);
       setMessage(t('settings.saved'));
       
       // Apply language change immediately

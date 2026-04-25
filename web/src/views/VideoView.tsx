@@ -26,7 +26,7 @@ const VideoView: React.FC = () => {
   const fetchMediaInfo = async (path: string) => {
     if (!path) return;
     try {
-      const response = await axios.get(`${API_BASE}/media-info?path=${encodeURIComponent(path)}`);
+      const response = await axios.get<MediaInfo>(`${API_BASE}/media-info?path=${encodeURIComponent(path)}`);
       setMediaInfo(response.data);
     } catch (error) {
       console.error('Failed to fetch media info', error);
@@ -43,7 +43,7 @@ const VideoView: React.FC = () => {
     else if (volumeMode === 'db') volumeGain = `${volumeValue}dB`;
 
     try {
-      const response = await axios.post(`${API_BASE}/jobs/video`, {
+      const response = await axios.post<{ task_id: string }>(`${API_BASE}/jobs/video`, {
         input_path: inputPath,
         crf,
         preset,

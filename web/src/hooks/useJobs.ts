@@ -9,7 +9,7 @@ export const useJobs = () => {
 
   const fetchJobs = async () => {
     try {
-      const response = await axios.get(`${API_BASE}/jobs`);
+      const response = await axios.get<Job[]>(`${API_BASE}/jobs`);
       setJobs(response.data);
     } catch (error) {
       console.error('Failed to fetch jobs', error);
@@ -24,7 +24,7 @@ export const useJobs = () => {
 
   const cancelJob = async (taskId: string) => {
     try {
-      await axios.delete(`${API_BASE}/jobs/${taskId}`);
+      await axios.delete<void>(`${API_BASE}/jobs/${taskId}`);
       fetchJobs();
     } catch (error) {
       console.error('Failed to cancel job', error);

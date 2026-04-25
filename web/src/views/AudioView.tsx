@@ -22,7 +22,7 @@ const AudioView: React.FC = () => {
   const fetchMediaInfo = async (path: string) => {
     if (!path) return;
     try {
-      const response = await axios.get(`${API_BASE}/media-info?path=${encodeURIComponent(path)}`);
+      const response = await axios.get<MediaInfo>(`${API_BASE}/media-info?path=${encodeURIComponent(path)}`);
       setMediaInfo(response.data);
     } catch (error) {
       console.error('Failed to fetch media info', error);
@@ -39,7 +39,7 @@ const AudioView: React.FC = () => {
     else if (volumeMode === 'db') volumeGain = `${volumeValue}dB`;
 
     try {
-      const response = await axios.post(`${API_BASE}/jobs/audio`, {
+      const response = await axios.post<{ task_id: string }>(`${API_BASE}/jobs/audio`, {
         input_path: inputPath,
         bitrate,
         keep_metadata: keepMetadata,
