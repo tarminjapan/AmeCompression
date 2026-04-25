@@ -94,7 +94,7 @@ def compress_audio(  # noqa: PLR0912, PLR0913, PLR0915
     # Get audio information
     audio_info = get_audio_info(input_path, ffprobe_path)
 
-    if not audio_info:
+    if not audio_info or audio_info.get("duration") is None:
         print("Error: Could not retrieve audio information.")
         sys.exit(1)
 

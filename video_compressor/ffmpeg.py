@@ -4,7 +4,6 @@ import contextlib
 import json
 import platform
 import subprocess
-import sys
 from pathlib import Path
 from typing import Any
 
@@ -96,7 +95,7 @@ def get_video_info(video_path: str | Path, ffprobe_path: str = "ffprobe") -> dic
                         duration = float(remaining[2])
     except subprocess.CalledProcessError as e:
         print(f"Error getting video info: {e.stderr}")
-        sys.exit(1)
+        return None
 
     # If duration not found in stream, try format-level duration
     if duration is None:
@@ -137,7 +136,9 @@ def get_video_info(video_path: str | Path, ffprobe_path: str = "ffprobe") -> dic
     return None
 
 
-def get_detailed_media_info(media_path: str | Path, ffprobe_path: str = "ffprobe"):
+def get_detailed_media_info(
+    media_path: str | Path, ffprobe_path: str = "ffprobe"
+) -> dict[str, Any] | None:
     """Get detailed media information using ffprobe.
 
     Args:
@@ -175,7 +176,7 @@ def get_detailed_media_info(media_path: str | Path, ffprobe_path: str = "ffprobe
         return None
 
 
-def get_audio_info(audio_path: str | Path, ffprobe_path: str = "ffprobe"):  # noqa: PLR0912
+def get_audio_info(audio_path: str | Path, ffprobe_path: str = "ffprobe") -> dict[str, Any]:  # noqa: PLR0912
     """Get audio information using ffprobe.
 
     Args:
@@ -238,7 +239,6 @@ def get_audio_info(audio_path: str | Path, ffprobe_path: str = "ffprobe"):  # no
                         duration = float(parts[0])
     except subprocess.CalledProcessError as e:
         print(f"Error getting audio info: {e.stderr}")
-        sys.exit(1)
 
     # If duration not found, try format-level duration
     if duration is None:
@@ -276,7 +276,9 @@ def get_audio_info(audio_path: str | Path, ffprobe_path: str = "ffprobe"):  # no
     }
 
 
-def get_video_info_safe(video_path: str | Path, ffprobe_path: str = "ffprobe"):  # noqa: PLR0912
+def get_video_info_safe(  # noqa: PLR0912
+    video_path: str | Path, ffprobe_path: str = "ffprobe"
+) -> dict[str, Any] | None:
     """Get video information using ffprobe (service layer safe version).
 
     Unlike get_video_info, this function does not call sys.exit on failure,

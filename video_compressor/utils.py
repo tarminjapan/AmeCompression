@@ -124,7 +124,7 @@ def parse_bitrate(bitrate_str: str) -> int:
 
 def calculate_scaled_resolution(
     width: int, height: int, max_width: int | None = None, max_height: int | None = None
-):
+) -> tuple[int, int] | None:
     """Calculate scaled resolution while maintaining aspect ratio.
 
     Args:
