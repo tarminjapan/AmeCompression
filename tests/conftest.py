@@ -3,12 +3,11 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+from video_compressor.settings import SettingsManager
 
 
 @pytest.fixture
 def settings_manager(tmp_dir):
-    from video_compressor.settings import SettingsManager
-
     SettingsManager.reset_instance()
     with patch("video_compressor.settings.get_config_dir", return_value=tmp_dir):
         mgr = SettingsManager.get_instance()

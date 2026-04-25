@@ -31,12 +31,13 @@ from .progress_handler import (
     ProgressParser,
 )
 from .utils import (
-    _BOLD,
-    _CYAN,
-    _DIM,
-    _GREEN,
-    _RESET,
-    _YELLOW,
+    BOLD,
+    CYAN,
+    DIM,
+    GREEN,
+    RED,
+    RESET,
+    YELLOW,
     format_time,
     parse_bitrate,
     print_header,
@@ -49,7 +50,7 @@ from .volume import (
 )
 
 
-def compress_audio(
+def compress_audio(  # noqa: PLR0912, PLR0913, PLR0915
     input_path,
     output_path=None,
     bitrate=None,
@@ -122,7 +123,7 @@ def compress_audio(
 
     # Handle volume analysis only mode
     if analyze_only:
-        print(f"\n  {_DIM}Analyzing volume level...{_RESET}")
+        print(f"\n  {DIM}Analyzing volume level...{RESET}")
         volume_info = analyze_volume_level(input_path, ffmpeg_path)
 
         if volume_info["mean_volume"] is not None:
@@ -135,7 +136,7 @@ def compress_audio(
                         "Recommended gain:",
                         (
                             f"{volume_info['recommended_gain']:+.1f} dB",
-                            _YELLOW,
+                            YELLOW,
                         )
                         if volume_info["recommended_gain"] is not None
                         else "N/A",
@@ -154,21 +155,21 @@ def compress_audio(
         volume_gain_db, is_auto = parse_volume_gain(volume_gain)
         if is_auto:
             # Analyze and calculate auto gain
-            print(f"\n  {_DIM}Analyzing volume level for auto gain...{_RESET}")
+            print(f"\n  {DIM}Analyzing volume level for auto gain...{RESET}")
             volume_info = analyze_volume_level(input_path, ffmpeg_path)
             if volume_info["recommended_gain"] is not None:
                 volume_gain_db = volume_info["recommended_gain"]
                 volume_rows = [
                     (
                         "Volume gain:  ",
-                        (f"{volume_gain_db:+.1f} dB (auto)", _YELLOW),
+                        (f"{volume_gain_db:+.1f} dB (auto)", YELLOW),
                     ),
                     ("Mean volume:  ", f"{volume_info['mean_volume']:.1f} dB"),
                     ("Max volume:   ", f"{volume_info['max_volume']:.1f} dB"),
                 ]
             else:
                 print(
-                    f"  {_YELLOW}Warning: Could not analyze volume, skipping volume adjustment{_RESET}"
+                    f"  {YELLOW}Warning: Could not analyze volume, skipping volume adjustment{RESET}"
                 )
 
     # Validate denoise level
@@ -193,8 +194,8 @@ def compress_audio(
     )
 
     # Print progress header
-    print(f"\n  {_BOLD}Starting MP3 compression...{_RESET}")
-    print(f"  {_CYAN}{'─' * 48}{_RESET}")
+    print(f"\n  {BOLD}Starting MP3 compression...{RESET}")
+    print(f"  {CYAN}{'─' * 48}{RESET}")
 
     # Execute via service layer
     reporter = CLIProgressReporter(total_duration)
@@ -224,7 +225,7 @@ def compress_audio(
             if total_duration > 0:
                 reporter.report_complete()
             print()  # New line after progress bar
-            print(f"  {_CYAN}{'─' * 48}{_RESET}")
+            print(f"  {CYAN}{'─' * 48}{RESET}")
 
             # Build results section
             output_size_mb = result.output_size / (1024 * 1024)
@@ -233,7 +234,7 @@ def compress_audio(
             result_rows = [
                 ("Input:      ", f"{input_size_mb:.2f} MB"),
                 ("Output:     ", f"{output_size_mb:.2f} MB"),
-                ("Reduction:  ", (f"{result.compression_ratio:.1f}%", _GREEN)),
+                ("Reduction:  ", (f"{result.compression_ratio:.1f}%", GREEN)),
                 ("MP3 bitrate:", result.bitrate),
             ]
 
@@ -247,14 +248,14 @@ def compress_audio(
                     )
                 )
 
-            print_header("Compression Results", result_rows, color=_GREEN)
+            print_header("Compression Results", result_rows, color=GREEN)
             print()
 
         elif result.is_cancelled:
             print("\n\n  Compression interrupted by user.")
             sys.exit(1)
         else:
-            print(f"\n  {_RED}Error: {result.error_message}{_RESET}")
+            print(f"\n  {RED}Error: {result.error_message}{RESET}")
             sys.exit(1)
 
     except KeyboardInterrupt:
@@ -262,7 +263,7 @@ def compress_audio(
         sys.exit(1)
 
 
-def compress_audio_service(
+def compress_audio_service(  # noqa: PLR0912, PLR0913, PLR0915
     input_path: str | Path,
     output_path: str | Path | None = None,
     bitrate: str | None = None,

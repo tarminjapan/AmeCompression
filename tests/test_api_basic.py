@@ -6,7 +6,7 @@ from video_compressor.api.job_runner import job_runner
 
 
 @pytest.fixture
-def client(settings_manager):
+def client(settings_manager):  # noqa: ARG001
     app = create_app({"TESTING": True})
     with app.test_client() as client:
         yield client
@@ -79,7 +79,7 @@ def test_task_completion_adds_finished_at(client):
 
         # Now check if finished_at is set
         with job_runner.tasks_lock:
-            task_id = list(job_runner.tasks.keys())[0]
+            task_id = next(iter(job_runner.tasks.keys()))
             assert "finished_at" in job_runner.tasks[task_id]
             assert isinstance(job_runner.tasks[task_id]["finished_at"], float)
 

@@ -8,6 +8,9 @@ Supports both CLI and API modes:
 import argparse
 import sys
 
+from .api import create_app
+from .cli import main as cli_main
+
 
 def main():
     parser = argparse.ArgumentParser(description="AmeCompression - Video and Audio Compressor")
@@ -22,12 +25,10 @@ def main():
     )
 
     # Use parse_known_args to avoid failing on CLI-specific arguments
-    args, unknown = parser.parse_known_args()
+    args, _unknown = parser.parse_known_args()
 
     if args.api:
         try:
-            from .api import create_app
-
             app = create_app(config_name=args.config)
             print(f"Starting API server on port {args.port} (config: {args.config})...")
             app.run(host="127.0.0.1", port=args.port, debug=False)
@@ -36,8 +37,6 @@ def main():
             sys.exit(1)
     else:
         # For CLI mode, we let cli_main handle everything
-        from .cli import main as cli_main
-
         cli_main()
 
 

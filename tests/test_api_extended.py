@@ -6,7 +6,7 @@ from video_compressor.api.job_runner import job_runner
 
 
 @pytest.fixture
-def client(settings_manager):
+def client(settings_manager):  # noqa: ARG001
     app = create_app({"TESTING": True})
     with app.test_client() as client:
         # Clear tasks for clean test
@@ -36,6 +36,7 @@ def test_update_settings(client):
 
 def test_audio_compression_endpoint(client):
     with (
+        patch("video_compressor.api.blueprints.jobs.Path.exists", return_value=True),
         patch("video_compressor.api.blueprints.jobs.compress_audio_service"),
         patch("threading.Thread"),
     ):
@@ -48,6 +49,7 @@ def test_audio_compression_endpoint(client):
 
 def test_list_jobs(client):
     with (
+        patch("video_compressor.api.blueprints.jobs.Path.exists", return_value=True),
         patch("video_compressor.api.blueprints.jobs.compress_video_service"),
         patch("threading.Thread"),
     ):
@@ -61,6 +63,7 @@ def test_list_jobs(client):
 
 def test_get_job_status(client):
     with (
+        patch("video_compressor.api.blueprints.jobs.Path.exists", return_value=True),
         patch("video_compressor.api.blueprints.jobs.compress_video_service"),
         patch("threading.Thread"),
     ):

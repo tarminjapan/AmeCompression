@@ -17,17 +17,19 @@ from .config import (
     VIDEO_PRESET,
 )
 from .ffmpeg import get_ffmpeg_executables
-from .utils import get_file_type, parse_input_paths, print_banner
+from .utils import (
+    BOLD,
+    CYAN,
+    DIM,
+    GREEN,
+    RED,
+    RESET,
+    YELLOW,
+    get_file_type,
+    parse_input_paths,
+    print_banner,
+)
 from .video import analyze_media, compress_video
-
-# ANSI color codes for summary
-_GREEN = "\033[92m"
-_YELLOW = "\033[93m"
-_RED = "\033[91m"
-_BOLD = "\033[1m"
-_DIM = "\033[2m"
-_RESET = "\033[0m"
-_CYAN = "\033[96m"
 
 
 def resolve_output_path(input_path, output_arg, num_files):
@@ -73,10 +75,8 @@ def resolve_output_path(input_path, output_arg, num_files):
         return output_path
 
     # Case 5: --output is a file path but multiple files → error
-    print(
-        f"  {_YELLOW}Warning: --output specifies a file but {num_files} input files given.{_RESET}"
-    )
-    print(f"  {_YELLOW}Use a directory path for --output when processing multiple files.{_RESET}")
+    print(f"  {YELLOW}Warning: --output specifies a file but {num_files} input files given.{RESET}")
+    print(f"  {YELLOW}Use a directory path for --output when processing multiple files.{RESET}")
     sys.exit(1)
 
 
@@ -153,7 +153,7 @@ def process_single_file(
     return True
 
 
-def main():
+def main():  # noqa: PLR0912, PLR0915
     """Main entry point for the CLI."""
     print_banner()
 
@@ -291,7 +291,7 @@ Examples:
             sys.exit(1)
         analyze_media(
             input_path=input_paths[0],
-            ffmpeg_path=ffmpeg_path,
+            _ffmpeg_path=ffmpeg_path,
             ffprobe_path=ffprobe_path,
         )
         return
@@ -318,15 +318,15 @@ Examples:
 
     # Batch processing (multiple files)
     num_files = len(input_paths)
-    print(f"\n  {_BOLD}Batch mode: processing {num_files} files{_RESET}")
-    print(f"  {_CYAN}{'─' * 48}{_RESET}")
+    print(f"\n  {BOLD}Batch mode: processing {num_files} files{RESET}")
+    print(f"  {CYAN}{'─' * 48}{RESET}")
 
     successes = []
     failures = []
 
     for i, input_path in enumerate(input_paths, 1):
-        print(f"\n  {_BOLD}[{i}/{num_files}]{_RESET} Processing: {_DIM}{input_path}{_RESET}")
-        print(f"  {_CYAN}{'─' * 48}{_RESET}")
+        print(f"\n  {BOLD}[{i}/{num_files}]{RESET} Processing: {DIM}{input_path}{RESET}")
+        print(f"  {CYAN}{'─' * 48}{RESET}")
 
         # Resolve output path for this file
         output_path = resolve_output_path(Path(input_path), args.output, num_files)
@@ -347,22 +347,22 @@ Examples:
         except SystemExit:
             failures.append(input_path)
         except KeyboardInterrupt:
-            print(f"\n\n  {_YELLOW}Batch processing interrupted by user.{_RESET}")
+            print(f"\n\n  {YELLOW}Batch processing interrupted by user.{RESET}")
             failures.extend(input_paths[i - 1 :])
             break
 
     # Print batch summary
-    print(f"\n  {_CYAN}{'━' * 48}{_RESET}")
-    print(f"  {_BOLD}Batch Summary{_RESET}")
-    print(f"  {_CYAN}{'─' * 48}{_RESET}")
+    print(f"\n  {CYAN}{'━' * 48}{RESET}")
+    print(f"  {BOLD}Batch Summary{RESET}")
+    print(f"  {CYAN}{'─' * 48}{RESET}")
     total = len(successes) + len(failures)
     print(f"  Total:   {total}")
-    print(f"  {_GREEN}Success: {len(successes)}{_RESET}")
+    print(f"  {GREEN}Success: {len(successes)}{RESET}")
     if failures:
-        print(f"  {_RED}Failed:  {len(failures)}{_RESET}")
+        print(f"  {RED}Failed:  {len(failures)}{RESET}")
         for f in failures:
-            print(f"    {_RED}✗ {_DIM}{f}{_RESET}")
-    print(f"  {_CYAN}{'━' * 48}{_RESET}")
+            print(f"    {RED}✗ {DIM}{f}{RESET}")
+    print(f"  {CYAN}{'━' * 48}{RESET}")
 
     if failures:
         sys.exit(1)

@@ -1,17 +1,17 @@
-import React from 'react';
-import { useTranslation } from 'react-i18next';
-import { X, CheckCircle, XCircle, Loader2 } from 'lucide-react';
-import type { Job } from '../types';
+import React from 'react'
+import { useTranslation } from 'react-i18next'
+import { X, CheckCircle, XCircle, Loader2 } from 'lucide-react'
+import type { Job } from '../types'
 
 interface ProgressPanelProps {
-  jobs: Job[];
-  onCancel: (id: string) => void;
+  jobs: Job[]
+  onCancel: (id: string) => void
 }
 
 const ProgressPanel: React.FC<ProgressPanelProps> = ({ jobs, onCancel }) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation()
 
-  if (jobs.length === 0) return null;
+  if (jobs.length === 0) return null
 
   return (
     <div className="progress-panel">
@@ -33,8 +33,8 @@ const ProgressPanel: React.FC<ProgressPanelProps> = ({ jobs, onCancel }) => {
             {job.status === 'running' && job.progress && (
               <div className="job-progress">
                 <div className="progress-bar-bg">
-                  <div 
-                    className="progress-bar-fill" 
+                  <div
+                    className="progress-bar-fill"
                     style={{ width: `${job.progress.percent}%` }}
                   ></div>
                 </div>
@@ -61,7 +61,7 @@ const ProgressPanel: React.FC<ProgressPanelProps> = ({ jobs, onCancel }) => {
         ))}
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default ProgressPanel;
+export default ProgressPanel

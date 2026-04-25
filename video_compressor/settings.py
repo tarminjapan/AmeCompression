@@ -63,11 +63,11 @@ class SettingsManager:
         except Exception as e:
             print(f"Error saving settings: {e}")
 
-    def get(self, key: str, default: Any = None) -> Any:  # noqa: ANN401
+    def get(self, key: str, default: Any = None) -> Any:
         """Get a setting value."""
         return self.settings.get(key, default)
 
-    def set(self, key: str, value: Any) -> None:  # noqa: ANN401
+    def set(self, key: str, value: Any) -> None:
         """Set a setting value."""
         self.settings[key] = value
         self._save_settings()

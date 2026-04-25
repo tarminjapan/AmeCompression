@@ -1,9 +1,9 @@
-import i18n from 'i18next';
-import { initReactI18next } from 'react-i18next';
-import LanguageDetector from 'i18next-browser-languagedetector';
+import i18n from 'i18next'
+import { initReactI18next } from 'react-i18next'
+import LanguageDetector from 'i18next-browser-languagedetector'
 
-import en from './locales/en.json';
-import ja from './locales/ja.json';
+import en from './locales/en.json'
+import ja from './locales/ja.json'
 
 i18n
   .use(LanguageDetector)
@@ -11,12 +11,13 @@ i18n
   .init({
     resources: {
       en: { translation: en },
-      ja: { translation: ja }
+      ja: { translation: ja },
     },
     fallbackLng: 'en',
     interpolation: {
-      escapeValue: false
-    }
-  });
+      escapeValue: false,
+    },
+  })
+  .catch((err) => console.error('Failed to initialize i18n:', err))
 
-export default i18n;
+export default i18n

@@ -4,20 +4,21 @@ import re
 from pathlib import Path
 
 from . import __version__
-from .config import AUDIO_EXTENSIONS, VIDEO_EXTENSIONS
+from .config import AUDIO_EXTENSIONS, MAX_HEIGHT, MAX_WIDTH, VIDEO_EXTENSIONS
 
 # ============================================
 # ASCII Art Banner
 # ============================================
 # ANSI color codes
-_CYAN = "\033[96m"
-_BLUE = "\033[94m"
-_MAGENTA = "\033[95m"
-_DIM = "\033[2m"
-_BOLD = "\033[1m"
-_RESET = "\033[0m"
-_GREEN = "\033[92m"
-_YELLOW = "\033[93m"
+CYAN = "\033[96m"
+BLUE = "\033[94m"
+MAGENTA = "\033[95m"
+DIM = "\033[2m"
+BOLD = "\033[1m"
+RED = "\033[91m"
+RESET = "\033[0m"
+GREEN = "\033[92m"
+YELLOW = "\033[93m"
 
 _ASCII_BANNER = r"""
    __  __          __
@@ -41,16 +42,16 @@ _ASCII_BANNER = r"""
 def print_banner():
     """Print a styled ASCII art banner for Video Compressor."""
     line = "─" * 62
-    print(f"{_DIM}{line}{_RESET}")
-    print(f"{_CYAN}{_BOLD}{_ASCII_BANNER}{_RESET}")
+    print(f"{DIM}{line}{RESET}")
+    print(f"{CYAN}{BOLD}{_ASCII_BANNER}{RESET}")
     print()
-    print(f"{_BLUE}{_BOLD}  ▸ Video Compressor v{__version__}{_RESET}")
-    print(f"{_DIM}  ▸ Video / Audio Compression Tool{_RESET}")
-    print(f"{_DIM}{line}{_RESET}")
+    print(f"{BLUE}{BOLD}  ▸ Video Compressor v{__version__}{RESET}")
+    print(f"{DIM}  ▸ Video / Audio Compression Tool{RESET}")
+    print(f"{DIM}{line}{RESET}")
     print()
 
 
-def print_header(title, rows, color=_CYAN):
+def print_header(title, rows, color=CYAN):
     """Print a styled section with a colored header line and indented rows.
 
     Args:
@@ -59,15 +60,15 @@ def print_header(title, rows, color=_CYAN):
                            or a tuple (value, value_color) for colored values.
         color (str): ANSI color code for the header
     """
-    print(f"\n  {color}{_BOLD}── {title} {'─' * (44 - len(title))}{_RESET}")
+    print(f"\n  {color}{BOLD}── {title} {'─' * (44 - len(title))}{RESET}")
     for row in rows:
         label = row[0]
         value_data = row[1] if len(row) > 1 else ""
         if isinstance(value_data, tuple):
             value_str, val_color = value_data
-            print(f"  {_DIM}{label}{_RESET}{val_color}{value_str}{_RESET}")
+            print(f"  {DIM}{label}{RESET}{val_color}{value_str}{RESET}")
         else:
-            print(f"  {_DIM}{label}{_RESET}{value_data}")
+            print(f"  {DIM}{label}{RESET}{value_data}")
 
 
 def format_time(seconds):
@@ -131,8 +132,6 @@ def calculate_scaled_resolution(width, height, max_width=None, max_height=None):
     Returns:
         tuple: (scaled_width, scaled_height) or None if scaling not needed
     """
-    from .config import MAX_HEIGHT, MAX_WIDTH
-
     # Set default values
     if max_width is None:
         max_width = MAX_WIDTH

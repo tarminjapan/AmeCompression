@@ -1,68 +1,69 @@
-import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Save, RefreshCw, Moon, Sun, Monitor } from 'lucide-react';
-import { api, initializeApi } from '../services/api';
-import type { AppSettings } from '../types';
+import React, { useState, useEffect, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Save, RefreshCw, Moon, Sun, Monitor } from 'lucide-react'
+import { api, initializeApi } from '../services/api'
+import type { AppSettings } from '../types'
 
 const SettingsView: React.FC = () => {
-  const { t, i18n } = useTranslation();
+  const { t, i18n } = useTranslation()
   const [settings, setSettings] = useState<AppSettings>({
     language: 'en',
     appearance_mode: 'system',
     ffmpeg_path: '',
     default_output_dir: '',
-  });
-  const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState('');
+  })
+  const [loading, setLoading] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [message, setMessage] = useState('')
+
+  const fetchSettings = useCallback(async () => {
+    setLoading(true)
+    try {
+      await initializeApi()
+      const response = await api.get<AppSettings>('/settings')
+      setSettings(response.data)
+    } catch (error) {
+      console.error('Failed to fetch settings', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
-    fetchSettings();
-  }, []);
-
-  const fetchSettings = async () => {
-    setLoading(true);
-    try {
-      await initializeApi();
-      const response = await api.get<AppSettings>('/settings');
-      setSettings(response.data);
-    } catch (error) {
-      console.error('Failed to fetch settings', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchSettings()
+  }, [fetchSettings])
 
   const saveSettings = async () => {
-    setSaving(true);
+    setSaving(true)
     try {
-      await api.post<void>('/settings', settings);
-      setMessage(t('settings.saved'));
-      
+      await api.post<unknown>('/settings', settings)
+      setMessage(t('settings.saved'))
+
       // Apply language change immediately
-      i18n.changeLanguage(settings.language);
-      
+      void i18n.changeLanguage(settings.language)
+
       // Apply theme
-      document.documentElement.setAttribute('data-theme', settings.appearance_mode);
-      
-      setTimeout(() => setMessage(''), 3000);
+      document.documentElement.setAttribute('data-theme', settings.appearance_mode)
+
+      setTimeout(() => setMessage(''), 3000)
     } catch (error) {
-      console.error('Failed to save settings', error);
-      setMessage(t('common.error'));
+      console.error('Failed to save settings', error)
+      setMessage(t('common.error'))
     } finally {
-      setSaving(false);
+      setSaving(false)
     }
-  };
+  }
 
   const handleLanguageChange = (lang: string) => {
-    setSettings({ ...settings, language: lang });
-  };
+    setSettings({ ...settings, language: lang })
+  }
 
   const handleThemeChange = (mode: 'light' | 'dark' | 'system') => {
-    setSettings({ ...settings, appearance_mode: mode });
-  };
+    setSettings({ ...settings, appearance_mode: mode })
+  }
 
-  if (loading) return <div>{t('common.loading')}</div>;
+  if (loading) return <div>{t('common.loading')}</div>
 
   return (
     <div className="view-container">
@@ -76,8 +77,8 @@ const SettingsView: React.FC = () => {
         <div className="settings-grid">
           <div className="setting-item">
             <label>{t('settings.language')}</label>
-            <select 
-              value={settings.language} 
+            <select
+              value={settings.language}
               onChange={(e) => handleLanguageChange(e.target.value)}
             >
               <option value="en">{t('settings.language_names.en')}</option>
@@ -87,19 +88,19 @@ const SettingsView: React.FC = () => {
           <div className="setting-item">
             <label>{t('settings.theme')}</label>
             <div className="theme-toggle">
-              <button 
+              <button
                 className={`theme-button ${settings.appearance_mode === 'light' ? 'active' : ''}`}
                 onClick={() => handleThemeChange('light')}
               >
                 <Sun size={18} /> {t('settings.themes.light')}
               </button>
-              <button 
+              <button
                 className={`theme-button ${settings.appearance_mode === 'dark' ? 'active' : ''}`}
                 onClick={() => handleThemeChange('dark')}
               >
                 <Moon size={18} /> {t('settings.themes.dark')}
               </button>
-              <button 
+              <button
                 className={`theme-button ${settings.appearance_mode === 'system' ? 'active' : ''}`}
                 onClick={() => handleThemeChange('system')}
               >
@@ -114,10 +115,10 @@ const SettingsView: React.FC = () => {
           <div className="setting-item" style={{ gridColumn: '1 / -1' }}>
             <label>{t('settings.ffmpeg_path')}</label>
             <div className="input-with-button">
-              <input 
-                type="text" 
-                value={settings.ffmpeg_path} 
-                onChange={(e) => setSettings({...settings, ffmpeg_path: e.target.value})}
+              <input
+                type="text"
+                value={settings.ffmpeg_path}
+                onChange={(e) => setSettings({ ...settings, ffmpeg_path: e.target.value })}
                 placeholder={t('settings.auto_detect')}
               />
             </div>
@@ -128,16 +129,16 @@ const SettingsView: React.FC = () => {
         <div className="settings-grid">
           <div className="setting-item" style={{ gridColumn: '1 / -1' }}>
             <label>{t('settings.output_default')}</label>
-            <input 
-              type="text" 
-              value={settings.default_output_dir} 
-              onChange={(e) => setSettings({...settings, default_output_dir: e.target.value})}
+            <input
+              type="text"
+              value={settings.default_output_dir}
+              onChange={(e) => setSettings({ ...settings, default_output_dir: e.target.value })}
             />
           </div>
         </div>
 
         <div className="settings-actions">
-          <button className="primary-button" onClick={saveSettings} disabled={saving}>
+          <button className="primary-button" onClick={() => void saveSettings()} disabled={saving}>
             {saving ? <RefreshCw className="spin" size={18} /> : <Save size={18} />}
             {t('settings.save')}
           </button>
@@ -145,7 +146,7 @@ const SettingsView: React.FC = () => {
         </div>
       </section>
     </div>
-  );
-};
+  )
+}
 
-export default SettingsView;
+export default SettingsView
