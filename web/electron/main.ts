@@ -1,17 +1,19 @@
-const { app, BrowserWindow } = require('electron');
-const path = require('path');
-const { spawn } = require('child_process');
+import { app, BrowserWindow } from 'electron';
+import * as path from 'path';
+import { spawn, ChildProcess } from 'child_process';
+import { fileURLToPath } from 'url';
+
+// In ESM, __dirname is not available by default
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const isDev = process.env.NODE_ENV === 'development';
 
-let mainWindow;
-let flaskProcess;
+let mainWindow: BrowserWindow | null = null;
+let flaskProcess: ChildProcess | null = null;
 
 function startFlask() {
-  // In development, we assume the python environment is active
-  // In production, we would use the bundled python executable
   const pythonCmd = process.platform === 'win32' ? 'python' : 'python3';
-  
-  // Navigate to project root from web/electron
   const projectRoot = path.join(__dirname, '..', '..');
   
   flaskProcess = spawn(pythonCmd, ['-m', 'video_compressor', '--api'], {
@@ -19,11 +21,11 @@ function startFlask() {
     env: { ...process.env, PYTHONUNBUFFERED: '1' }
   });
 
-  flaskProcess.stdout.on('data', (data) => {
+  flaskProcess.stdout?.on('data', (data) => {
     console.log(`Flask: ${data}`);
   });
 
-  flaskProcess.stderr.on('data', (data) => {
+  flaskProcess.stderr?.on('data', (data) => {
     console.error(`Flask Error: ${data}`);
   });
 }
@@ -33,8 +35,9 @@ function createWindow() {
     width: 1100,
     height: 800,
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, 'preload.js'),
     },
     title: "AmeCompression"
   });
@@ -60,9 +63,6 @@ app.on('ready', () => {
 });
 
 app.on('window-all-closed', () => {
-  if (flaskProcess) {
-    flaskProcess.kill();
-  }
   if (process.platform !== 'darwin') {
     app.quit();
   }
@@ -74,8 +74,9 @@ app.on('activate', () => {
   }
 });
 
-process.on('exit', () => {
+app.on('will-quit', () => {
   if (flaskProcess) {
     flaskProcess.kill();
+    flaskProcess = null;
   }
 });

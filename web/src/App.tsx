@@ -23,9 +23,19 @@ interface TaskResult {
   error_message: string;
 }
 
+interface MediaInfo {
+  type: 'video' | 'audio';
+  width?: number;
+  height?: number;
+  duration?: number;
+  format?: string;
+  bitrate?: number;
+  size?: number;
+}
+
 function App() {
   const [inputPath, setInputPath] = useState('');
-  const [mediaInfo, setMediaInfo] = useState<any>(null);
+  const [mediaInfo, setMediaInfo] = useState<MediaInfo | null>(null);
   const [crf, setCrf] = useState(25);
   const [preset, setPreset] = useState(6);
   const [taskId, setTaskId] = useState<string | null>(null);

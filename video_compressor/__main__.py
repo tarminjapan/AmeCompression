@@ -7,11 +7,20 @@ Supports both CLI, GUI and API modes:
   python -m video_compressor --api               # API mode
 """
 
+import argparse
 import sys
 
 
 def main():
-    if "--gui" in sys.argv:
+    parser = argparse.ArgumentParser(description="AmeCompression - Video and Audio Compressor")
+    parser.add_argument("--gui", action="store_true", help="Start in GUI mode")
+    parser.add_argument("--api", action="store_true", help="Start in API mode")
+    parser.add_argument("--port", type=int, default=5000, help="Port for API mode (default: 5000)")
+    
+    # Use parse_known_args to avoid failing on CLI-specific arguments
+    args, unknown = parser.parse_known_args()
+
+    if args.gui:
         try:
             from .gui.app import run_gui
 
@@ -22,25 +31,19 @@ def main():
                 "Install it with: pip install customtkinter"
             )
             sys.exit(1)
-    elif "--api" in sys.argv:
+    elif args.api:
         try:
             from .api import create_app
             
             app = create_app()
-            port = 5000
-            if "--port" in sys.argv:
-                idx = sys.argv.index("--port")
-                if idx + 1 < len(sys.argv):
-                    port = int(sys.argv[idx + 1])
-            
-            print(f"Starting API server on port {port}...")
-            app.run(host="127.0.0.1", port=port, debug=False)
+            print(f"Starting API server on port {args.port}...")
+            app.run(host="127.0.0.1", port=args.port, debug=False)
         except ImportError as e:
             print(f"Error: Flask and Flask-CORS are required for API mode. {e}")
             sys.exit(1)
     else:
+        # For CLI mode, we let cli_main handle everything
         from .cli import main as cli_main
-
         cli_main()
 
 
