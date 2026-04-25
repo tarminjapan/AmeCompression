@@ -4,10 +4,12 @@ Provides common interfaces for progress reporting and cancellation
 that can be used by CLI, GUI, and API layers.
 """
 
+from __future__ import annotations
+
 import re
 import time
 from abc import ABC, abstractmethod
-from typing import Protocol
+from typing import Any, Protocol
 
 from .models import ProgressEvent
 
@@ -194,7 +196,7 @@ class CLIProgressReporter(ProgressReporter):
         self._stats = {"fps_list": [], "speed_list": [], "frame_list": []}
 
     @property
-    def stats(self) -> dict:
+    def stats(self) -> dict[str, Any]:
         """Get collected statistics."""
         return self._stats
 
@@ -204,12 +206,12 @@ class CLIProgressReporter(ProgressReporter):
 
         from .config import PROGRESS_BAR_LENGTH
         from .utils import (
-            _BOLD,
-            _CYAN,
-            _DIM,
-            _GREEN,
-            _RESET,
-            _YELLOW,
+            BOLD,
+            CYAN,
+            DIM,
+            GREEN,
+            RESET,
+            YELLOW,
             format_time,
         )
 
@@ -221,11 +223,11 @@ class CLIProgressReporter(ProgressReporter):
             self._stats["speed_list"].append(event.speed)
             self._stats["frame_list"].append(event.frame)
 
-        eta_str = f"{_YELLOW}--:--{_RESET}"
+        eta_str = f"{YELLOW}--:--{RESET}"
         if event.eta > 0:
-            eta_str = f"{_YELLOW}{format_time(event.eta)}{_RESET}"
+            eta_str = f"{YELLOW}{format_time(event.eta)}{RESET}"
         elif event.percent >= 100:
-            eta_str = f"{_GREEN}✓ Done{_RESET}"
+            eta_str = f"{GREEN}✓ Done{RESET}"
 
         filled = int(PROGRESS_BAR_LENGTH * event.percent / 100)
         bar = "█" * filled + "░" * (PROGRESS_BAR_LENGTH - filled)
@@ -233,15 +235,15 @@ class CLIProgressReporter(ProgressReporter):
         current_str = format_time(event.current_time)
         total_str = format_time(self.total_duration)
 
-        bar_color = _GREEN if event.percent >= 100 else _CYAN
+        bar_color = GREEN if event.percent >= 100 else CYAN
 
         output = (
-            f"\r  {bar_color}[{bar}]{_RESET} {_BOLD}{event.percent:5.1f}%{_RESET}"
-            f"  {_DIM}│{_RESET} {current_str}{_DIM}/{_RESET}{total_str}"
-            f"  {_DIM}│{_RESET} ETA {eta_str}"
-            f"  {_DIM}│{_RESET} {_DIM}{event.fps:>4.0f}{_RESET} fps"
-            f" {_DIM}·{_RESET} {_DIM}{event.speed:.1f}x{_RESET}"
-            f" {_DIM}·{_RESET} {_DIM}F{_RESET}{event.frame}"
+            f"\r  {bar_color}[{bar}]{RESET} {BOLD}{event.percent:5.1f}%{RESET}"
+            f"  {DIM}│{RESET} {current_str}{DIM}/{RESET}{total_str}"
+            f"  {DIM}│{RESET} ETA {eta_str}"
+            f"  {DIM}│{RESET} {DIM}{event.fps:>4.0f}{RESET} fps"
+            f" {DIM}·{RESET} {DIM}{event.speed:.1f}x{RESET}"
+            f" {DIM}·{RESET} {DIM}F{RESET}{event.frame}"
         )
         sys.stdout.write(output)
         sys.stdout.flush()
@@ -251,18 +253,18 @@ class CLIProgressReporter(ProgressReporter):
         import sys
 
         from .config import PROGRESS_BAR_LENGTH
-        from .utils import _BOLD, _DIM, _GREEN, _RESET, format_time
+        from .utils import BOLD, DIM, GREEN, RESET, format_time
 
         bar = "█" * PROGRESS_BAR_LENGTH
         total_str = format_time(self.total_duration)
 
         output = (
-            f"\r  {_GREEN}[{bar}]{_RESET} {_BOLD}100.0%{_RESET}"
-            f"  {_DIM}│{_RESET} {total_str}{_DIM}/{_RESET}{total_str}"
-            f"  {_DIM}│{_RESET} ETA {_GREEN}✓ Done{_RESET}"
-            f"  {_DIM}│{_RESET} {_DIM}  --{_RESET} fps"
-            f" {_DIM}·{_RESET} {_DIM}--x{_RESET}"
-            f" {_DIM}·{_RESET} {_DIM}F{_RESET}--"
+            f"\r  {GREEN}[{bar}]{RESET} {BOLD}100.0%{RESET}"
+            f"  {DIM}│{RESET} {total_str}{DIM}/{RESET}{total_str}"
+            f"  {DIM}│{RESET} ETA {GREEN}✓ Done{RESET}"
+            f"  {DIM}│{RESET} {DIM}  --{RESET} fps"
+            f" {DIM}·{RESET} {DIM}--x{RESET}"
+            f" {DIM}·{RESET} {DIM}F{RESET}--"
         )
         sys.stdout.write(output)
         sys.stdout.flush()

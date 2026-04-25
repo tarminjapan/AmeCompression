@@ -6,7 +6,7 @@ from video_compressor.api.job_runner import job_runner
 
 
 @pytest.fixture
-def client(settings_manager):
+def client(settings_manager):  # noqa: ARG001
     app = create_app({"TESTING": True})
     with app.test_client() as client:
         with job_runner.tasks_lock:
@@ -23,6 +23,7 @@ def test_full_video_compression_flow(client):
     """
     # 1. Start job
     with (
+        patch("video_compressor.api.blueprints.jobs.Path.exists", return_value=True),
         patch("video_compressor.api.blueprints.jobs.compress_video_service") as mock_service,
         patch("threading.Thread") as mock_thread,
     ):
@@ -65,6 +66,7 @@ def test_full_video_compression_flow(client):
 def test_job_cancellation_flow(client):
     """Test the flow of cancelling a job."""
     with (
+        patch("video_compressor.api.blueprints.jobs.Path.exists", return_value=True),
         patch("video_compressor.api.blueprints.jobs.compress_video_service"),
         patch("threading.Thread"),
     ):
@@ -88,7 +90,7 @@ def test_settings_persistence_integration(client):
     update_data = {
         "language": "ja",
         "ffmpeg_path": "/usr/local/bin/ffmpeg",
-        "default_output_dir": "/tmp/output",
+        "default_output_dir": "/tmp/output",  # noqa: S108
     }
     client.post("/api/settings", json=update_data)
 
@@ -96,4 +98,4 @@ def test_settings_persistence_integration(client):
     response = client.get("/api/settings")
     assert response.json["language"] == "ja"
     assert response.json["ffmpeg_path"] == "/usr/local/bin/ffmpeg"
-    assert response.json["default_output_dir"] == "/tmp/output"
+    assert response.json["default_output_dir"] == "/tmp/output"  # noqa: S108

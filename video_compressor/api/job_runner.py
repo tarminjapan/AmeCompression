@@ -44,7 +44,9 @@ class JobRunner:
                 for tid in to_delete:
                     del self.tasks[tid]
 
-    def start_task(self, task_type: str, compression_func: Callable[..., Any], **kwargs: Any) -> str:  # noqa: ANN401
+    def start_task(
+        self, task_type: str, compression_func: Callable[..., Any], **kwargs: Any
+    ) -> str:
         """Start a new compression task."""
         self.start_cleanup_thread()
         task_id = str(uuid.uuid4())
@@ -151,6 +153,8 @@ class JobRunner:
             task = self.tasks.get(task_id)
             if task:
                 task["cancel_source"].cancel()
+                if task["status"] not in ["success", "failed", "cancelled"]:
+                    task["status"] = "cancelling"
                 return True
         return False
 

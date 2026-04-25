@@ -22,7 +22,7 @@ def main():
     )
 
     # Use parse_known_args to avoid failing on CLI-specific arguments
-    args, unknown = parser.parse_known_args()
+    args, _unknown = parser.parse_known_args()
 
     if args.api:
         try:

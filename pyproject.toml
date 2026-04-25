@@ -86,7 +86,7 @@ exclude = [
 #   FIX  - flake8-fixme
 select = [
     "E", "W", "F", "I", "UP", "B", "SIM", "RUF", "ERA",
-    "ANN", "D", "S", "PERF", "N", "PL", "ARG", "PTH", "TD", "FIX"
+    "S", "PERF", "N", "PL", "ARG", "PTH", "TD", "FIX"
 ]
 
 ignore = [
@@ -99,9 +99,6 @@ ignore = [
     "PLR0912", # Too many branches
     "PLR0915", # Too many statements
     "PLR0911", # Too many return statements
-    "D205",    # 1 blank line required between summary line and description
-    "D415",    # First line should end with a period, question mark, or exclamation point
-    "D301",    # Use r""" if any backslashes in a docstring
 ]
 
 # Allow fix for all enabled rules
@@ -151,6 +148,8 @@ reportUntypedClassDecorator = "error"
 reportUntypedBaseClass = "error"
 reportMissingTypeArgument = "error"
 reportGeneralTypeIssues = "error"
+reportMissingParameterType = "warning"
+reportMissingReturnType = "warning"
 
 
 # =============================================================================

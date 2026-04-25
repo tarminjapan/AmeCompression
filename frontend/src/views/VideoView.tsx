@@ -1,45 +1,45 @@
-import React, { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Upload, Settings, Play, Loader2, Info } from 'lucide-react';
-import { api, initializeApi } from '../services/api';
-import type { MediaInfo } from '../types';
+import React, { useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Upload, Settings, Play, Loader2, Info } from 'lucide-react'
+import { api, initializeApi } from '../services/api'
+import type { MediaInfo } from '../types'
 
 const VideoView: React.FC = () => {
-  const { t } = useTranslation();
-  const [inputPath, setInputPath] = useState('');
-  const [mediaInfo, setMediaInfo] = useState<MediaInfo | null>(null);
-  const [crf, setCrf] = useState(25);
-  const [preset, setPreset] = useState(6);
-  const [audioBitrate, setAudioBitrate] = useState('192k');
-  const [audioEnabled, setAudioEnabled] = useState(true);
-  const [maxResolution, setMaxResolution] = useState('original');
-  const [maxFps, setMaxFps] = useState('unlimited');
-  const [volumeMode, setVolumeMode] = useState('disabled');
-  const [volumeValue, setVolumeValue] = useState(0);
-  const [denoiseEnabled, setDenoiseEnabled] = useState(false);
-  const [denoiseLevel, setDenoiseLevel] = useState(0.15);
-  const [loading, setLoading] = useState(false);
-  const [taskId, setTaskId] = useState<string | null>(null);
+  const { t } = useTranslation()
+  const [inputPath, setInputPath] = useState('')
+  const [mediaInfo, setMediaInfo] = useState<MediaInfo | null>(null)
+  const [crf, setCrf] = useState(25)
+  const [preset, setPreset] = useState(6)
+  const [audioBitrate, setAudioBitrate] = useState('192k')
+  const [audioEnabled, setAudioEnabled] = useState(true)
+  const [maxResolution, setMaxResolution] = useState('original')
+  const [maxFps, setMaxFps] = useState('unlimited')
+  const [volumeMode, setVolumeMode] = useState('disabled')
+  const [volumeValue, setVolumeValue] = useState(0)
+  const [denoiseEnabled, setDenoiseEnabled] = useState(false)
+  const [denoiseLevel, setDenoiseLevel] = useState(0.15)
+  const [loading, setLoading] = useState(false)
+  const [taskId, setTaskId] = useState<string | null>(null)
 
   const fetchMediaInfo = async (path: string) => {
-    if (!path) return;
+    if (!path) return
     try {
-      await initializeApi();
-      const response = await api.get<MediaInfo>(`/media-info?path=${encodeURIComponent(path)}`);
-      setMediaInfo(response.data);
+      await initializeApi()
+      const response = await api.get<MediaInfo>(`/media-info?path=${encodeURIComponent(path)}`)
+      setMediaInfo(response.data)
     } catch (error) {
-      console.error('Failed to fetch media info', error);
-      setMediaInfo(null);
+      console.error('Failed to fetch media info', error)
+      setMediaInfo(null)
     }
-  };
+  }
 
   const startCompression = async () => {
-    setLoading(true);
-    
-    let volumeGain = null;
-    if (volumeMode === 'auto') volumeGain = 'auto';
-    else if (volumeMode === 'multiplier') volumeGain = `${volumeValue}`;
-    else if (volumeMode === 'db') volumeGain = `${volumeValue}dB`;
+    setLoading(true)
+
+    let volumeGain = null
+    if (volumeMode === 'auto') volumeGain = 'auto'
+    else if (volumeMode === 'multiplier') volumeGain = `${volumeValue}`
+    else if (volumeMode === 'db') volumeGain = `${volumeValue}dB`
 
     try {
       const response = await api.post<{ task_id: string }>('/jobs/video', {
@@ -52,14 +52,14 @@ const VideoView: React.FC = () => {
         max_fps: maxFps === 'unlimited' ? null : parseInt(maxFps),
         volume_gain_db: volumeGain,
         denoise_level: denoiseEnabled ? denoiseLevel : null,
-      });
-      setTaskId(response.data.task_id);
+      })
+      setTaskId(response.data.task_id)
     } catch (error) {
-      console.error('Failed to start compression', error);
+      console.error('Failed to start compression', error)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   return (
     <div className="view-container">
@@ -69,44 +69,63 @@ const VideoView: React.FC = () => {
       </header>
 
       <section className="card">
-        <h2><Upload size={18} /> {t('file.select')}</h2>
+        <h2>
+          <Upload size={18} /> {t('file.select')}
+        </h2>
         <div className="input-group">
-          <input 
-            type="text" 
+          <input
+            type="text"
             placeholder={t('file.browse_hint')}
             value={inputPath}
             onChange={(e) => setInputPath(e.target.value)}
-            onBlur={() => fetchMediaInfo(inputPath)}
+            onBlur={() => void fetchMediaInfo(inputPath)}
           />
         </div>
         {mediaInfo && (
           <div className="media-info-display">
-            <p><strong>{t('file.format')}:</strong> {mediaInfo.type}</p>
-            <p><strong>{t('video_settings.resolution.original')}:</strong> {mediaInfo.width}x{mediaInfo.height}</p>
-            <p><strong>{t('file.duration')}:</strong> {Math.round(mediaInfo.duration)}s</p>
+            <p>
+              <strong>{t('file.format')}:</strong> {mediaInfo.type}
+            </p>
+            <p>
+              <strong>{t('video_settings.resolution.original')}:</strong> {mediaInfo.width}x
+              {mediaInfo.height}
+            </p>
+            <p>
+              <strong>{t('file.duration')}:</strong> {Math.round(mediaInfo.duration)}s
+            </p>
           </div>
         )}
       </section>
 
       <section className="card">
-        <h2><Settings size={18} /> {t('video_settings.title')}</h2>
-        
+        <h2>
+          <Settings size={18} /> {t('video_settings.title')}
+        </h2>
+
         <div className="section-title">{t('video_settings.video_section')}</div>
         <div className="settings-grid">
           <div className="setting-item">
-            <label>{t('video_settings.crf')}: {crf}</label>
-            <input 
-              type="range" min="0" max="63" 
-              value={crf} 
+            <label>
+              {t('video_settings.crf')}: {crf}
+            </label>
+            <input
+              type="range"
+              min="0"
+              max="63"
+              value={crf}
               onChange={(e) => setCrf(parseInt(e.target.value))}
             />
             <small>{t('video_settings.crf_range')}</small>
           </div>
           <div className="setting-item">
-            <label>{t('video_settings.preset')}: {preset}</label>
-            <input 
-              type="range" min="0" max="13" 
-              value={preset} 
+            <label>
+              {t('video_settings.preset')}: {preset}
+            </label>
+            <input
+              type="range"
+              min="0"
+              max="13"
+              value={preset}
               onChange={(e) => setPreset(parseInt(e.target.value))}
             />
             <small>{t('video_settings.preset_range')}</small>
@@ -136,7 +155,11 @@ const VideoView: React.FC = () => {
         <div className="settings-grid">
           <div className="setting-item">
             <label>{t('video_settings.audio_bitrate')}</label>
-            <select value={audioBitrate} onChange={(e) => setAudioBitrate(e.target.value)} disabled={!audioEnabled}>
+            <select
+              value={audioBitrate}
+              onChange={(e) => setAudioBitrate(e.target.value)}
+              disabled={!audioEnabled}
+            >
               <option value="128k">128k</option>
               <option value="192k">192k</option>
               <option value="256k">256k</option>
@@ -145,12 +168,12 @@ const VideoView: React.FC = () => {
           </div>
           <div className="setting-item">
             <label>
-              <input 
-                type="checkbox" 
-                checked={!audioEnabled} 
-                onChange={(e) => setAudioEnabled(!e.target.checked)} 
-              />
-              {' '}{t('video_settings.disable_audio')}
+              <input
+                type="checkbox"
+                checked={!audioEnabled}
+                onChange={(e) => setAudioEnabled(!e.target.checked)}
+              />{' '}
+              {t('video_settings.disable_audio')}
             </label>
           </div>
         </div>
@@ -169,15 +192,16 @@ const VideoView: React.FC = () => {
           {(volumeMode === 'multiplier' || volumeMode === 'db') && (
             <div className="setting-item">
               <label>
-                {volumeMode === 'multiplier' ? t('volume.multiplier_label') : t('volume.db_label')}: 
-                {volumeValue}{volumeMode === 'db' ? ' dB' : 'x'}
+                {volumeMode === 'multiplier' ? t('volume.multiplier_label') : t('volume.db_label')}:
+                {volumeValue}
+                {volumeMode === 'db' ? ' dB' : 'x'}
               </label>
-              <input 
-                type="range" 
-                min={volumeMode === 'multiplier' ? "0.1" : "-20"} 
-                max={volumeMode === 'multiplier' ? "5.0" : "20"} 
-                step={volumeMode === 'multiplier' ? "0.1" : "1"}
-                value={volumeValue} 
+              <input
+                type="range"
+                min={volumeMode === 'multiplier' ? '0.1' : '-20'}
+                max={volumeMode === 'multiplier' ? '5.0' : '20'}
+                step={volumeMode === 'multiplier' ? '0.1' : '1'}
+                value={volumeValue}
                 onChange={(e) => setVolumeValue(parseFloat(e.target.value))}
               />
             </div>
@@ -188,20 +212,25 @@ const VideoView: React.FC = () => {
         <div className="settings-grid">
           <div className="setting-item">
             <label>
-              <input 
-                type="checkbox" 
-                checked={denoiseEnabled} 
-                onChange={(e) => setDenoiseEnabled(e.target.checked)} 
-              />
-              {' '}{t('denoise.enable')}
+              <input
+                type="checkbox"
+                checked={denoiseEnabled}
+                onChange={(e) => setDenoiseEnabled(e.target.checked)}
+              />{' '}
+              {t('denoise.enable')}
             </label>
           </div>
           {denoiseEnabled && (
             <div className="setting-item">
-              <label>{t('denoise.level')}: {denoiseLevel}</label>
-              <input 
-                type="range" min="0" max="1" step="0.01"
-                value={denoiseLevel} 
+              <label>
+                {t('denoise.level')}: {denoiseLevel}
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={denoiseLevel}
                 onChange={(e) => setDenoiseLevel(parseFloat(e.target.value))}
               />
             </div>
@@ -210,9 +239,9 @@ const VideoView: React.FC = () => {
       </section>
 
       <section className="action-area">
-        <button 
-          className="primary-button" 
-          onClick={startCompression}
+        <button
+          className="primary-button"
+          onClick={() => void startCompression()}
           disabled={!inputPath || loading}
         >
           {loading ? <Loader2 className="spin" /> : <Play size={18} />}
@@ -221,12 +250,12 @@ const VideoView: React.FC = () => {
       </section>
 
       {taskId && (
-         <div className="task-status-hint">
-            <Info size={16} /> {t('status.processing')} (ID: {taskId})
-         </div>
+        <div className="task-status-hint">
+          <Info size={16} /> {t('status.processing')} (ID: {taskId})
+        </div>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default VideoView;
+export default VideoView

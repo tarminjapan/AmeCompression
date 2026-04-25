@@ -28,6 +28,12 @@ repos:
           - requests>=2.33.1
         types: [python]
         pass_filenames: false
+      - id: pytest
+        name: pytest
+        entry: uv run pytest tests
+        language: system
+        pass_filenames: false
+        always_run: true
 
   # Frontend Checks (ESLint & Prettier)
   - repo: local

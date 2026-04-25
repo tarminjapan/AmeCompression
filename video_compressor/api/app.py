@@ -12,10 +12,10 @@ def create_app(config_name="dev"):
     app = Flask(__name__)
 
     # Configure app
-    if isinstance(config_name, str):
-        app.config.from_object(config_by_name[config_name])
-    else:
+    if isinstance(config_name, dict):
         app.config.from_mapping(config_name)
+    else:
+        app.config.from_object(config_by_name[config_name])
 
     # Restrict CORS to local development and electron context
     CORS(app, resources={r"/api/*": {"origins": ["http://localhost:5173", "app://."]}})
@@ -34,5 +34,9 @@ def create_app(config_name="dev"):
         import time
 
         return {"status": "healthy", "timestamp": time.time(), "version": "1.0.0"}
+
+    # Register root_health explicitly is not needed as decorator does it,
+    # but to satisfy 'not accessed' we can reference it
+    _ = root_health
 
     return app

@@ -1,34 +1,37 @@
-import { useState, useEffect } from 'react';
-import { api, initializeApi } from '../services/api';
-import type { Job } from '../types';
+import { useState, useEffect, useCallback } from 'react'
+import { api, initializeApi } from '../services/api'
+import type { Job } from '../types'
 
 export const useJobs = () => {
-  const [jobs, setJobs] = useState<Job[]>([]);
+  const [jobs, setJobs] = useState<Job[]>([])
 
-  const fetchJobs = async () => {
+  const fetchJobs = useCallback(async () => {
     try {
-      await initializeApi();
-      const response = await api.get<Job[]>('/jobs');
-      setJobs(response.data);
+      await initializeApi()
+      const response = await api.get<Job[]>('/jobs')
+      setJobs(response.data)
     } catch (error) {
-      console.error('Failed to fetch jobs', error);
+      console.error('Failed to fetch jobs', error)
     }
-  };
+  }, [])
 
   useEffect(() => {
-    fetchJobs();
-    const interval = setInterval(fetchJobs, 1000);
-    return () => clearInterval(interval);
-  }, []);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchJobs()
+    const interval = setInterval(() => {
+      void fetchJobs()
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [fetchJobs])
 
   const cancelJob = async (taskId: string) => {
     try {
-      await api.delete<void>(`/jobs/${taskId}`);
-      fetchJobs();
+      await api.delete<unknown>(`/jobs/${taskId}`)
+      void fetchJobs()
     } catch (error) {
-      console.error('Failed to cancel job', error);
+      console.error('Failed to cancel job', error)
     }
-  };
+  }
 
-  return { jobs, cancelJob };
-};
+  return { jobs, cancelJob }
+}
