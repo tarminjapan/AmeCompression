@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 import Layout from './components/Layout';
 import VideoView from './views/VideoView';
@@ -7,9 +6,8 @@ import AudioView from './views/AudioView';
 import SettingsView from './views/SettingsView';
 import ProgressPanel from './components/ProgressPanel';
 import { useJobs } from './hooks/useJobs';
+import { api } from './services/api';
 import './App.css';
-
-const API_BASE = 'http://localhost:5000/api';
 
 function App() {
   const { i18n } = useTranslation();
@@ -20,7 +18,7 @@ function App() {
     // Initial settings fetch to apply theme and language
     const initApp = async () => {
       try {
-        const response = await axios.get(`${API_BASE}/settings`);
+        const response = await api.get('/settings');
         const { language, appearance_mode } = response.data;
         
         if (language) {
