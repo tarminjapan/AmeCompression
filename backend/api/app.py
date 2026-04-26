@@ -33,11 +33,7 @@ def create_app(config_name: str | dict[str, Any] = "dev"):
 
     # Add a root health check for convenience
     @app.route("/api/health")
-    def root_health():
+    def root_health():  # pyright: ignore [reportUnusedFunction]
         return {"status": "healthy", "timestamp": time.time(), "version": "1.0.0"}
-
-    # Register root_health explicitly is not needed as decorator does it,
-    # but to satisfy 'not accessed' we can reference it
-    _ = root_health
 
     return app

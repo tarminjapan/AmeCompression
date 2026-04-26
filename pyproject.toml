@@ -122,6 +122,8 @@ typeCheckingMode = "strict"
 pythonVersion = "3.10"
 pythonPlatform = "All"
 stubPath = "typings"
+venvPath = "."
+venv = ".venv"
 
 # Include/exclude paths
 include = ["backend", "tests"]
