@@ -6,9 +6,9 @@ from pathlib import Path
 # Python: type: ignore, noqa, pyright: ignore, pylint: disable
 # JS/TS: eslint-disable, @ts-ignore, @ts-nocheck
 SUPPRESSION_PATTERNS = [
+    re.compile(r"#\s*(ruff:|pyright:)?\s*noqa", re.IGNORECASE),
     re.compile(r"#\s*type:\s*ignore", re.IGNORECASE),
     re.compile(r"#\s*pyright:\s*ignore", re.IGNORECASE),
-    re.compile(r"#\s*noqa", re.IGNORECASE),
     re.compile(r"#\s*pylint:\s*disable", re.IGNORECASE),
     re.compile(r"eslint-disable", re.IGNORECASE),
     re.compile(r"@ts-(ignore|nocheck)", re.IGNORECASE),
