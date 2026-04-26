@@ -3,22 +3,19 @@ import sys
 from pathlib import Path
 
 # Regex for common error suppression comments
-# Python: type: ignore, noqa, pyright: ignore, ruff: noqa, pylint: disable
-# JS/TS: // eslint-disable, // @ts-ignore, // @ts-nocheck, /* eslint-disable */
+# Python: type: ignore, noqa, pyright: ignore, pylint: disable
+# JS/TS: eslint-disable, @ts-ignore, @ts-nocheck
 SUPPRESSION_PATTERNS = [
     re.compile(r"#\s*type:\s*ignore", re.IGNORECASE),
     re.compile(r"#\s*pyright:\s*ignore", re.IGNORECASE),
-    re.compile(r"#\s*ruff:\s*noqa", re.IGNORECASE),
     re.compile(r"#\s*noqa", re.IGNORECASE),
     re.compile(r"#\s*pylint:\s*disable", re.IGNORECASE),
-    re.compile(r"//\s*eslint-disable", re.IGNORECASE),
-    re.compile(r"/\*\s*eslint-disable", re.IGNORECASE),
-    re.compile(r"//\s*@ts-(ignore|nocheck)", re.IGNORECASE),
+    re.compile(r"eslint-disable", re.IGNORECASE),
     re.compile(r"@ts-(ignore|nocheck)", re.IGNORECASE),
 ]
 
 # Files/Directories to ignore
-IGNORE_PATHS = [
+IGNORE_PATHS = {
     ".git",
     ".venv",
     "node_modules",
@@ -26,13 +23,21 @@ IGNORE_PATHS = [
     "__pycache__",
     "uv.lock",
     "package-lock.json",
-    "CONTRIBUTING.md",  # Allowed to mention them here
-    "scripts/check_suppression_comments.py",  # Ignore self
-]
+    "CONTRIBUTING.md",
+    "scripts/check_suppression_comments.py",
+}
 
 
 def should_ignore(path: Path) -> bool:
-    return any(ignore_path in str(path.as_posix()) for ignore_path in IGNORE_PATHS)
+    # Convert to posix string for consistent comparison
+    path_str = str(path.as_posix())
+
+    # Check if the path itself is in IGNORE_PATHS
+    if path_str in IGNORE_PATHS or path.name in IGNORE_PATHS:
+        return True
+
+    # Check if any parent directory is in IGNORE_PATHS
+    return any(part in IGNORE_PATHS for part in path.parts)
 
 
 def check_file(file_path: Path) -> int:

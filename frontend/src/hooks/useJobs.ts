@@ -16,9 +16,7 @@ export const useJobs = () => {
   }, [])
 
   useEffect(() => {
-    void Promise.resolve().then(() => {
-      void fetchJobs()
-    })
+    void fetchJobs()
     const interval = setInterval(() => {
       void fetchJobs()
     }, 1000)

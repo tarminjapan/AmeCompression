@@ -30,9 +30,7 @@ const SettingsView: React.FC = () => {
   }, [])
 
   useEffect(() => {
-    void Promise.resolve().then(() => {
-      void fetchSettings()
-    })
+    void fetchSettings()
   }, [fetchSettings])
 
   const saveSettings = async () => {
