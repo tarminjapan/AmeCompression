@@ -41,9 +41,6 @@ dev = [
     "pyinstaller>=6.0",
 ]
 
-[project.scripts]
-ame-compression = "video_compressor.cli:main"
-
 # =============================================================================
 # Ruff - Linter & Formatter (replaces black, isort, flake8, etc.)
 # =============================================================================
