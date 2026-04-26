@@ -133,7 +133,6 @@ reportUnknownMemberType = "none" # Still too noisy for many libraries
 reportUnknownVariableType = "none"
 reportUnknownArgumentType = "none"
 reportUnknownParameterType = "none"
-reportUnknownReturnType = "none"
 reportUnusedImport = "error"
 reportUnusedVariable = "error"
 reportUntypedFunctionDecorator = "error"
@@ -142,7 +141,7 @@ reportUntypedBaseClass = "error"
 reportMissingTypeArgument = "error"
 reportGeneralTypeIssues = "error"
 reportMissingParameterType = "warning"
-reportMissingReturnType = "warning"
+reportMissingModuleSource = "warning"
 
 
 # =============================================================================
