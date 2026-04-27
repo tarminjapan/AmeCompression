@@ -4,8 +4,30 @@ from backend.volume import (
     build_audio_filter,
     calculate_recommended_gain,
     parse_volume_gain,
+    resolve_volume_gain,
     validate_denoise_level,
 )
+from unittest.mock import patch
+
+
+class TestResolveVolumeGain:
+    def test_none(self):
+        assert resolve_volume_gain(None, "dummy.mp4") is None
+
+    def test_float(self):
+        assert resolve_volume_gain(5.0, "dummy.mp4") == 5.0
+
+    def test_string_db(self):
+        assert resolve_volume_gain("10dB", "dummy.mp4") == 10.0
+
+    def test_string_multiplier(self):
+        assert resolve_volume_gain("2.0", "dummy.mp4") == round(20 * math.log10(2.0), 1)
+
+    @patch("backend.volume.analyze_volume_level")
+    def test_auto(self, mock_analyze):
+        mock_analyze.return_value = {"recommended_gain": 3.5}
+        assert resolve_volume_gain("auto", "dummy.mp4") == 3.5
+        mock_analyze.assert_called_once_with("dummy.mp4", "ffmpeg")
 
 
 class TestCalculateRecommendedGain:

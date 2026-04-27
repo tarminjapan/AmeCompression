@@ -37,6 +37,7 @@ from .volume import (
     analyze_volume_level,
     build_audio_filter,
     parse_volume_gain,
+    resolve_volume_gain,
 )
 
 
@@ -88,19 +89,10 @@ def format_file_size(size_bytes: float | str | None) -> str:
         return "Unknown"
 
 
-def _prepare_video_command(
-    params: VideoCompressionParams,
-    video_info: dict[str, Any],
-) -> tuple[list[str], tuple[int, int] | None]:
-    """Prepare FFmpeg command for video compression."""
-    input_path = Path(params.input_path)
-    output_path = Path(params.output_path) if params.output_path else None
-    crf = params.crf if params.crf is not None else DEFAULT_CRF
-    preset = params.preset if params.preset is not None else VIDEO_PRESET
-    audio_bitrate = (
-        params.audio_bitrate if params.audio_bitrate is not None else DEFAULT_AUDIO_BITRATE
-    )
-
+def _get_scaled_resolution(
+    params: VideoCompressionParams, video_info: dict[str, Any]
+) -> tuple[int, int] | None:
+    """Calculate scaled resolution based on params and video info."""
     w_val = video_info.get("width")
     h_val = video_info.get("height")
     original_width = int(w_val) if w_val is not None else None
@@ -115,11 +107,48 @@ def _prepare_video_command(
                 custom_max_width = int(res_parts[0])
                 custom_max_height = int(res_parts[1])
 
-    scaled_res = None
     if original_width is not None and original_height is not None:
-        scaled_res = calculate_scaled_resolution(
+        return calculate_scaled_resolution(
             original_width, original_height, custom_max_width, custom_max_height
         )
+    return None
+
+
+def _prepare_audio_args(params: VideoCompressionParams) -> list[str]:
+    """Prepare FFmpeg audio arguments."""
+    if not params.audio_enabled:
+        return ["-an"]
+
+    input_path = Path(params.input_path)
+    audio_bitrate = (
+        params.audio_bitrate if params.audio_bitrate is not None else DEFAULT_AUDIO_BITRATE
+    )
+    bitrate_kbps = parse_bitrate(audio_bitrate)
+    if bitrate_kbps > MAX_AUDIO_BITRATE:
+        audio_bitrate = f"{MAX_AUDIO_BITRATE}k"
+
+    # Resolve volume gain
+    gain_db = resolve_volume_gain(params.volume_gain_db, input_path, params.ffmpeg_path)
+
+    args = []
+    audio_filter = build_audio_filter(gain_db, params.denoise_level)
+    if audio_filter:
+        args.extend(["-af", audio_filter])
+    args.extend(["-c:a", AUDIO_CODEC, "-b:a", audio_bitrate])
+    return args
+
+
+def _prepare_video_command(
+    params: VideoCompressionParams,
+    video_info: dict[str, Any],
+) -> tuple[list[str], tuple[int, int] | None]:
+    """Prepare FFmpeg command for video compression."""
+    input_path = Path(params.input_path)
+    output_path = Path(params.output_path) if params.output_path else None
+    crf = params.crf if params.crf is not None else DEFAULT_CRF
+    preset = params.preset if params.preset is not None else VIDEO_PRESET
+
+    scaled_res = _get_scaled_resolution(params, video_info)
 
     cmd = [params.ffmpeg_path, "-i", str(input_path), "-y"]
 
@@ -133,29 +162,7 @@ def _prepare_video_command(
 
     cmd.extend(["-c:v", VIDEO_CODEC, "-crf", str(crf), "-b:v", "0", "-preset", str(preset)])
 
-    if params.audio_enabled:
-        bitrate_kbps = parse_bitrate(audio_bitrate)
-        if bitrate_kbps > MAX_AUDIO_BITRATE:
-            audio_bitrate = f"{MAX_AUDIO_BITRATE}k"
-
-        # Resolve volume gain
-        gain_db = None
-        if isinstance(params.volume_gain_db, str):
-            gain_val, is_auto = parse_volume_gain(params.volume_gain_db)
-            if is_auto:
-                vol_info = analyze_volume_level(input_path, params.ffmpeg_path)
-                gain_db = vol_info.get("recommended_gain")
-            else:
-                gain_db = gain_val
-        else:
-            gain_db = params.volume_gain_db
-
-        audio_filter = build_audio_filter(gain_db, params.denoise_level)
-        if audio_filter:
-            cmd.extend(["-af", audio_filter])
-        cmd.extend(["-c:a", AUDIO_CODEC, "-b:a", audio_bitrate])
-    else:
-        cmd.extend(["-an"])
+    cmd.extend(_prepare_audio_args(params))
 
     cmd.append(str(output_path))
     return cmd, scaled_res

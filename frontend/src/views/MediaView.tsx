@@ -1,8 +1,117 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
+import { TFunction } from 'i18next'
 import { Upload, Settings, Play, Loader2, Info, FileSearch } from 'lucide-react'
 import { api, initializeApi } from '../services/api'
 import type { MediaInfo } from '../types'
+
+interface AudioSettingsSectionProps {
+  t: TFunction
+  volumeMode: string
+  setVolumeMode: (val: string) => void
+  volumeValue: number
+  setVolumeValue: (val: number) => void
+  denoiseEnabled: boolean
+  setDenoiseEnabled: (val: boolean) => void
+  denoiseLevel: number
+  setDenoiseLevel: (val: number) => void
+}
+
+const AudioSettingsSection: React.FC<AudioSettingsSectionProps> = ({
+  t,
+  volumeMode,
+  setVolumeMode,
+  volumeValue,
+  setVolumeValue,
+  denoiseEnabled,
+  setDenoiseEnabled,
+  denoiseLevel,
+  setDenoiseLevel,
+}) => (
+  <>
+    <div className="section-title">{t('volume.title')}</div>
+    <div className="settings-grid">
+      <div className="setting-item">
+        <label>{t('volume.mode')}</label>
+        <select value={volumeMode} onChange={(e) => setVolumeMode(e.target.value)}>
+          <option value="disabled">{t('volume.modes.disabled')}</option>
+          <option value="auto">{t('volume.modes.auto')}</option>
+          <option value="multiplier">{t('volume.modes.multiplier')}</option>
+          <option value="db">{t('volume.modes.db')}</option>
+        </select>
+      </div>
+      {(volumeMode === 'multiplier' || volumeMode === 'db') && (
+        <div className="setting-item">
+          <label>
+            {volumeMode === 'multiplier' ? t('volume.multiplier_label') : t('volume.db_label')}:{' '}
+            {volumeValue}
+            {volumeMode === 'db' ? ' dB' : 'x'}
+          </label>
+          <input
+            type="range"
+            min={volumeMode === 'multiplier' ? '0.1' : '-20'}
+            max={volumeMode === 'multiplier' ? '5.0' : '20'}
+            step={volumeMode === 'multiplier' ? '0.1' : '1'}
+            value={volumeValue}
+            onChange={(e) => setVolumeValue(parseFloat(e.target.value))}
+          />
+        </div>
+      )}
+    </div>
+
+    <div className="section-title">{t('denoise.title')}</div>
+    <div className="settings-grid">
+      <div className="setting-item">
+        <label>
+          <input
+            type="checkbox"
+            checked={denoiseEnabled}
+            onChange={(e) => setDenoiseEnabled(e.target.checked)}
+          />{' '}
+          {t('denoise.enable')}
+        </label>
+      </div>
+      {denoiseEnabled && (
+        <div className="setting-item" style={{ gridColumn: 'span 2' }}>
+          <label>
+            {t('denoise.level')}: {denoiseLevel}
+          </label>
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+            <button
+              className={`secondary-button ${denoiseLevel === 0.15 ? 'active' : ''}`}
+              onClick={() => setDenoiseLevel(0.15)}
+              style={{ flex: 1, padding: '4px' }}
+            >
+              {t('denoise.presets.light')}
+            </button>
+            <button
+              className={`secondary-button ${denoiseLevel === 0.4 ? 'active' : ''}`}
+              onClick={() => setDenoiseLevel(0.4)}
+              style={{ flex: 1, padding: '4px' }}
+            >
+              {t('denoise.presets.medium')}
+            </button>
+            <button
+              className={`secondary-button ${denoiseLevel === 0.7 ? 'active' : ''}`}
+              onClick={() => setDenoiseLevel(0.7)}
+              style={{ flex: 1, padding: '4px' }}
+            >
+              {t('denoise.presets.strong')}
+            </button>
+          </div>
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.01"
+            value={denoiseLevel}
+            onChange={(e) => setDenoiseLevel(parseFloat(e.target.value))}
+          />
+        </div>
+      )}
+    </div>
+  </>
+)
 
 const MediaView: React.FC = () => {
   const { t } = useTranslation()
@@ -132,90 +241,6 @@ const MediaView: React.FC = () => {
       setLoading(false)
     }
   }
-
-  const AudioSettingsSection = () => (
-    <>
-      <div className="section-title">{t('volume.title')}</div>
-      <div className="settings-grid">
-        <div className="setting-item">
-          <label>{t('volume.mode')}</label>
-          <select value={volumeMode} onChange={(e) => setVolumeMode(e.target.value)}>
-            <option value="disabled">{t('volume.modes.disabled')}</option>
-            <option value="auto">{t('volume.modes.auto')}</option>
-            <option value="multiplier">{t('volume.modes.multiplier')}</option>
-            <option value="db">{t('volume.modes.db')}</option>
-          </select>
-        </div>
-        {(volumeMode === 'multiplier' || volumeMode === 'db') && (
-          <div className="setting-item">
-            <label>
-              {volumeMode === 'multiplier' ? t('volume.multiplier_label') : t('volume.db_label')}:{' '}
-              {volumeValue}
-              {volumeMode === 'db' ? ' dB' : 'x'}
-            </label>
-            <input
-              type="range"
-              min={volumeMode === 'multiplier' ? '0.1' : '-20'}
-              max={volumeMode === 'multiplier' ? '5.0' : '20'}
-              step={volumeMode === 'multiplier' ? '0.1' : '1'}
-              value={volumeValue}
-              onChange={(e) => setVolumeValue(parseFloat(e.target.value))}
-            />
-          </div>
-        )}
-      </div>
-
-      <div className="section-title">{t('denoise.title')}</div>
-      <div className="settings-grid">
-        <div className="setting-item">
-          <label>
-            <input
-              type="checkbox"
-              checked={denoiseEnabled}
-              onChange={(e) => setDenoiseEnabled(e.target.checked)}
-            />{' '}
-            {t('denoise.enable')}
-          </label>
-        </div>
-        {denoiseEnabled && (
-          <div className="setting-item" style={{ gridColumn: 'span 2' }}>
-            <label>{t('denoise.level')}: {denoiseLevel}</label>
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-              <button
-                className={`secondary-button ${denoiseLevel === 0.15 ? 'active' : ''}`}
-                onClick={() => setDenoiseLevel(0.15)}
-                style={{ flex: 1, padding: '4px' }}
-              >
-                {t('denoise.presets.light')}
-              </button>
-              <button
-                className={`secondary-button ${denoiseLevel === 0.4 ? 'active' : ''}`}
-                onClick={() => setDenoiseLevel(0.4)}
-                style={{ flex: 1, padding: '4px' }}
-              >
-                {t('denoise.presets.medium')}
-              </button>
-              <button
-                className={`secondary-button ${denoiseLevel === 0.7 ? 'active' : ''}`}
-                onClick={() => setDenoiseLevel(0.7)}
-                style={{ flex: 1, padding: '4px' }}
-              >
-                {t('denoise.presets.strong')}
-              </button>
-            </div>
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.01"
-              value={denoiseLevel}
-              onChange={(e) => setDenoiseLevel(parseFloat(e.target.value))}
-            />
-          </div>
-        )}
-      </div>
-    </>
-  )
 
   return (
     <div className="view-container">
@@ -393,7 +418,17 @@ const MediaView: React.FC = () => {
                 </label>
               </div>
             </div>
-            <AudioSettingsSection />
+            <AudioSettingsSection
+              t={t}
+              volumeMode={volumeMode}
+              setVolumeMode={setVolumeMode}
+              volumeValue={volumeValue}
+              setVolumeValue={setVolumeValue}
+              denoiseEnabled={denoiseEnabled}
+              setDenoiseEnabled={setDenoiseEnabled}
+              denoiseLevel={denoiseLevel}
+              setDenoiseLevel={setDenoiseLevel}
+            />
           </>
         ) : (
           <>
@@ -420,7 +455,17 @@ const MediaView: React.FC = () => {
                 </label>
               </div>
             </div>
-            <AudioSettingsSection />
+            <AudioSettingsSection
+              t={t}
+              volumeMode={volumeMode}
+              setVolumeMode={setVolumeMode}
+              volumeValue={volumeValue}
+              setVolumeValue={setVolumeValue}
+              denoiseEnabled={denoiseEnabled}
+              setDenoiseEnabled={setDenoiseEnabled}
+              denoiseLevel={denoiseLevel}
+              setDenoiseLevel={setDenoiseLevel}
+            />
           </>
         )}
       </section>

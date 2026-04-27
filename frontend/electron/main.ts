@@ -152,11 +152,10 @@ function killFlask() {
       // On Windows, childProcess.kill() might not kill the entire process tree
       // (especially with Flask's reloader). taskkill is more reliable.
       if (flaskProcess.pid) {
-        try {
-          spawn('taskkill', ['/pid', flaskProcess.pid.toString(), '/f', '/t'])
-        } catch (err) {
+        const killer = spawn('taskkill', ['/pid', flaskProcess.pid.toString(), '/f', '/t'])
+        killer.on('error', (err) => {
           console.error('Failed to execute taskkill:', err)
-        }
+        })
       }
     } else {
       flaskProcess.kill()
@@ -200,7 +199,10 @@ ipcMain.handle('select-file', async () => {
   const result = await dialog.showOpenDialog(mainWindow, {
     properties: ['openFile'],
     filters: [
-      { name: 'Media Files', extensions: ['mp4', 'mkv', 'avi', 'mov', 'mp3', 'wav', 'flac', 'm4a'] },
+      {
+        name: 'Media Files',
+        extensions: ['mp4', 'mkv', 'avi', 'mov', 'mp3', 'wav', 'flac', 'm4a'],
+      },
       { name: 'All Files', extensions: ['*'] },
     ],
   })

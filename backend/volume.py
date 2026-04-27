@@ -131,14 +131,14 @@ def parse_volume_gain(gain_str: str | None) -> tuple[float | None, bool]:
     if gain_str.lower().endswith("db"):
         try:
             return float(gain_str[:-2]), False
-        except ValueError:
-            raise ValueError(f"Invalid dB value '{gain_str}'")
+        except ValueError as err:
+            raise ValueError(f"Invalid dB value '{gain_str}'") from err
 
     # Treat as multiplier (convert to dB)
     try:
         multiplier = float(gain_str)
-    except ValueError:
-        raise ValueError(f"Invalid volume gain value '{gain_str}'")
+    except ValueError as err:
+        raise ValueError(f"Invalid volume gain value '{gain_str}'") from err
 
     if multiplier <= 0:
         raise ValueError("Volume multiplier must be positive")
@@ -196,3 +196,34 @@ def validate_denoise_level(denoise: float | None) -> float | None:
         )
         return max(DENOISE_MIN, min(DENOISE_MAX, denoise))
     return denoise
+
+
+def resolve_volume_gain(
+    volume_gain_db: str | float | None,
+    input_path: str | Path,
+    ffmpeg_path: str = "ffmpeg",
+) -> float | None:
+    """Resolve volume gain to a numeric dB value.
+
+    If volume_gain_db is \"auto\", analyze the input file to determine
+    the recommended gain. If it's a string, parse it.
+
+    Args:
+        volume_gain_db: Volume gain value (str, float, or None)
+        input_path: Path to input file for analysis
+        ffmpeg_path: Path to ffmpeg executable
+
+    Returns:
+        float | None: Resolved gain in dB, or None if no gain specified
+    """
+    if volume_gain_db is None:
+        return None
+
+    if isinstance(volume_gain_db, str):
+        gain_val, is_auto = parse_volume_gain(volume_gain_db)
+        if is_auto:
+            vol_info = analyze_volume_level(input_path, ffmpeg_path)
+            return vol_info.get("recommended_gain")
+        return gain_val
+
+    return volume_gain_db

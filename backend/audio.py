@@ -34,6 +34,7 @@ from .volume import (
     analyze_volume_level,
     build_audio_filter,
     parse_volume_gain,
+    resolve_volume_gain,
 )
 
 
@@ -52,16 +53,7 @@ def _prepare_audio_command(params: AudioCompressionParams) -> list[str]:
     cmd = [params.ffmpeg_path, "-i", str(input_path), "-y"]
 
     # Resolve volume gain
-    gain_db = None
-    if isinstance(params.volume_gain_db, str):
-        gain_val, is_auto = parse_volume_gain(params.volume_gain_db)
-        if is_auto:
-            vol_info = analyze_volume_level(input_path, params.ffmpeg_path)
-            gain_db = vol_info.get("recommended_gain")
-        else:
-            gain_db = gain_val
-    else:
-        gain_db = params.volume_gain_db
+    gain_db = resolve_volume_gain(params.volume_gain_db, input_path, params.ffmpeg_path)
 
     audio_filter = build_audio_filter(gain_db, params.denoise_level)
     if audio_filter:
