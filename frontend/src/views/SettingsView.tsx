@@ -132,6 +132,7 @@ const SettingsView: React.FC = () => {
               type="text"
               value={settings.default_output_dir}
               onChange={(e) => setSettings({ ...settings, default_output_dir: e.target.value })}
+              placeholder={t('settings.output_placeholder')}
             />
           </div>
         </div>

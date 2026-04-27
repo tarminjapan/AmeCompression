@@ -20,16 +20,18 @@ repos:
     hooks:
       - id: ruff
         name: ruff
-        entry: uv run ruff check
+        entry: uv run ruff check backend tests
         language: system
         types: [python]
-        require_serial: true
+        pass_filenames: false
+        always_run: true
       - id: ruff-format
         name: ruff-format
-        entry: uv run ruff format --check
+        entry: uv run ruff format --check backend tests
         language: system
         types: [python]
-        require_serial: true
+        pass_filenames: false
+        always_run: true
 
   # Pyright - 静的型チェック (Python)
   - repo: local

@@ -9,6 +9,7 @@ export interface IElectronAPI {
   getApiUrl: () => Promise<string>
   getBackendStatus: () => Promise<BackendStatus>
   restartBackend: () => Promise<boolean>
+  selectFile: () => Promise<string | null>
 }
 
 declare global {

@@ -33,6 +33,7 @@ from .utils import (
 from .volume import (
     analyze_volume_level,
     build_audio_filter,
+    resolve_volume_gain,
 )
 
 
@@ -50,7 +51,10 @@ def _prepare_audio_command(params: AudioCompressionParams) -> list[str]:
 
     cmd = [params.ffmpeg_path, "-i", str(input_path), "-y"]
 
-    audio_filter = build_audio_filter(params.volume_gain_db, params.denoise_level)
+    # Resolve volume gain
+    gain_db = resolve_volume_gain(params.volume_gain_db, input_path, params.ffmpeg_path)
+
+    audio_filter = build_audio_filter(gain_db, params.denoise_level)
     if audio_filter:
         cmd.extend(["-af", audio_filter])
 
