@@ -36,6 +36,7 @@ from .utils import (
 from .volume import (
     analyze_volume_level,
     build_audio_filter,
+    parse_volume_gain,
 )
 
 
@@ -136,7 +137,20 @@ def _prepare_video_command(
         bitrate_kbps = parse_bitrate(audio_bitrate)
         if bitrate_kbps > MAX_AUDIO_BITRATE:
             audio_bitrate = f"{MAX_AUDIO_BITRATE}k"
-        audio_filter = build_audio_filter(params.volume_gain_db, params.denoise_level)
+
+        # Resolve volume gain
+        gain_db = None
+        if isinstance(params.volume_gain_db, str):
+            gain_val, is_auto = parse_volume_gain(params.volume_gain_db)
+            if is_auto:
+                vol_info = analyze_volume_level(input_path, params.ffmpeg_path)
+                gain_db = vol_info.get("recommended_gain")
+            else:
+                gain_db = gain_val
+        else:
+            gain_db = params.volume_gain_db
+
+        audio_filter = build_audio_filter(gain_db, params.denoise_level)
         if audio_filter:
             cmd.extend(["-af", audio_filter])
         cmd.extend(["-c:a", AUDIO_CODEC, "-b:a", audio_bitrate])

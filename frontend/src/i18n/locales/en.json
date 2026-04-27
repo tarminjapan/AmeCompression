@@ -133,6 +133,7 @@
     "ffmpeg_path": "FFmpeg Path",
     "auto_detect": "Auto Detect",
     "output_default": "Default Output Folder",
+    "output_placeholder": "Save to the same directory as the input file",
     "default_compression": "Default Compression Settings",
     "save": "Save Settings",
     "reset": "Reset to Defaults",

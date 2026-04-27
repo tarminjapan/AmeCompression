@@ -133,6 +133,7 @@
     "ffmpeg_path": "FFmpeg パス",
     "auto_detect": "自動検出",
     "output_default": "デフォルト出力フォルダー",
+    "output_placeholder": "入力ファイルと同じディレクトリに保存",
     "default_compression": "デフォルト圧縮設定",
     "save": "設定を保存",
     "reset": "初期設定に戻す",

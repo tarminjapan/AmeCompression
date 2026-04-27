@@ -38,7 +38,7 @@ class VideoCompressionParams:
     audio_enabled: bool = True
     max_fps: int | None = None
     resolution: str | None = None
-    volume_gain_db: float | None = None
+    volume_gain_db: str | float | None = None
     denoise_level: float | None = None
     ffmpeg_path: str = "ffmpeg"
     ffprobe_path: str = "ffprobe"
@@ -54,7 +54,7 @@ class AudioCompressionParams:
     input_path: str | Path
     output_path: str | Path | None = None
     bitrate: str | None = None
-    volume_gain_db: float | None = None
+    volume_gain_db: str | float | None = None
     denoise_level: float | None = None
     keep_metadata: bool = True
     ffmpeg_path: str = "ffmpeg"

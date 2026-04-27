@@ -1,6 +1,6 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Upload, Settings, Play, Loader2, Info } from 'lucide-react'
+import { Upload, Settings, Play, Loader2, Info, FileSearch } from 'lucide-react'
 import { api, initializeApi } from '../services/api'
 import type { MediaInfo } from '../types'
 
@@ -13,6 +13,8 @@ const MediaView: React.FC = () => {
   const [crf, setCrf] = useState(25)
   const [preset, setPreset] = useState(6)
   const [maxResolution, setMaxResolution] = useState('original')
+  const [customWidth, setCustomWidth] = useState('')
+  const [customHeight, setCustomHeight] = useState('')
   const [maxFps, setMaxFps] = useState('unlimited')
   const [videoAudioBitrate, setVideoAudioBitrate] = useState('192k')
   const [audioEnabled, setAudioEnabled] = useState(true)
@@ -30,8 +32,9 @@ const MediaView: React.FC = () => {
   const [loading, setLoading] = useState(false)
   const [taskId, setTaskId] = useState<string | null>(null)
   const [mediaType, setMediaType] = useState<'video' | 'audio'>('video')
+  const [isDragging, setIsDragging] = useState(false)
 
-  const fetchMediaInfo = async (path: string) => {
+  const fetchMediaInfo = useCallback(async (path: string) => {
     if (!path) return
     try {
       await initializeApi()
@@ -44,7 +47,47 @@ const MediaView: React.FC = () => {
       console.error('Failed to fetch media info', error)
       setMediaInfo(null)
     }
+  }, [])
+
+  const handleSelectFile = async () => {
+    const path = await window.electronAPI.selectFile()
+    if (path) {
+      setInputPath(path)
+      void fetchMediaInfo(path)
+    }
   }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(true)
+  }
+
+  const handleDragLeave = () => {
+    setIsDragging(false)
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(false)
+    const files = e.dataTransfer.files
+    if (files && files.length > 0) {
+      const path = files[0].path
+      if (path) {
+        setInputPath(path)
+        void fetchMediaInfo(path)
+      }
+    }
+  }
+
+  useEffect(() => {
+    const preventDefault = (e: DragEvent) => e.preventDefault()
+    window.addEventListener('dragover', preventDefault)
+    window.addEventListener('drop', preventDefault)
+    return () => {
+      window.removeEventListener('dragover', preventDefault)
+      window.removeEventListener('drop', preventDefault)
+    }
+  }, [])
 
   const startCompression = async () => {
     setLoading(true)
@@ -54,6 +97,11 @@ const MediaView: React.FC = () => {
     else if (volumeMode === 'multiplier') volumeGain = `${volumeValue}`
     else if (volumeMode === 'db') volumeGain = `${volumeValue}dB`
 
+    let resolution = maxResolution
+    if (maxResolution === 'custom' && customWidth && customHeight) {
+      resolution = `${customWidth}x${customHeight}`
+    }
+
     try {
       if (mediaType === 'video') {
         const response = await api.post<{ task_id: string }>('/jobs/video', {
@@ -62,7 +110,7 @@ const MediaView: React.FC = () => {
           preset,
           audio_bitrate: videoAudioBitrate,
           audio_enabled: audioEnabled,
-          resolution: maxResolution === 'original' ? null : maxResolution,
+          resolution: resolution === 'original' ? null : resolution,
           max_fps: maxFps === 'unlimited' ? null : parseInt(maxFps),
           volume_gain_db: volumeGain,
           denoise_level: denoiseEnabled ? denoiseLevel : null,
@@ -85,6 +133,90 @@ const MediaView: React.FC = () => {
     }
   }
 
+  const AudioSettingsSection = () => (
+    <>
+      <div className="section-title">{t('volume.title')}</div>
+      <div className="settings-grid">
+        <div className="setting-item">
+          <label>{t('volume.mode')}</label>
+          <select value={volumeMode} onChange={(e) => setVolumeMode(e.target.value)}>
+            <option value="disabled">{t('volume.modes.disabled')}</option>
+            <option value="auto">{t('volume.modes.auto')}</option>
+            <option value="multiplier">{t('volume.modes.multiplier')}</option>
+            <option value="db">{t('volume.modes.db')}</option>
+          </select>
+        </div>
+        {(volumeMode === 'multiplier' || volumeMode === 'db') && (
+          <div className="setting-item">
+            <label>
+              {volumeMode === 'multiplier' ? t('volume.multiplier_label') : t('volume.db_label')}:{' '}
+              {volumeValue}
+              {volumeMode === 'db' ? ' dB' : 'x'}
+            </label>
+            <input
+              type="range"
+              min={volumeMode === 'multiplier' ? '0.1' : '-20'}
+              max={volumeMode === 'multiplier' ? '5.0' : '20'}
+              step={volumeMode === 'multiplier' ? '0.1' : '1'}
+              value={volumeValue}
+              onChange={(e) => setVolumeValue(parseFloat(e.target.value))}
+            />
+          </div>
+        )}
+      </div>
+
+      <div className="section-title">{t('denoise.title')}</div>
+      <div className="settings-grid">
+        <div className="setting-item">
+          <label>
+            <input
+              type="checkbox"
+              checked={denoiseEnabled}
+              onChange={(e) => setDenoiseEnabled(e.target.checked)}
+            />{' '}
+            {t('denoise.enable')}
+          </label>
+        </div>
+        {denoiseEnabled && (
+          <div className="setting-item" style={{ gridColumn: 'span 2' }}>
+            <label>{t('denoise.level')}: {denoiseLevel}</label>
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+              <button
+                className={`secondary-button ${denoiseLevel === 0.15 ? 'active' : ''}`}
+                onClick={() => setDenoiseLevel(0.15)}
+                style={{ flex: 1, padding: '4px' }}
+              >
+                {t('denoise.presets.light')}
+              </button>
+              <button
+                className={`secondary-button ${denoiseLevel === 0.4 ? 'active' : ''}`}
+                onClick={() => setDenoiseLevel(0.4)}
+                style={{ flex: 1, padding: '4px' }}
+              >
+                {t('denoise.presets.medium')}
+              </button>
+              <button
+                className={`secondary-button ${denoiseLevel === 0.7 ? 'active' : ''}`}
+                onClick={() => setDenoiseLevel(0.7)}
+                style={{ flex: 1, padding: '4px' }}
+              >
+                {t('denoise.presets.strong')}
+              </button>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              value={denoiseLevel}
+              onChange={(e) => setDenoiseLevel(parseFloat(e.target.value))}
+            />
+          </div>
+        )}
+      </div>
+    </>
+  )
+
   return (
     <div className="view-container">
       <header className="view-header">
@@ -94,11 +226,16 @@ const MediaView: React.FC = () => {
         </p>
       </header>
 
-      <section className="card">
+      <section
+        className={`card drop-zone ${isDragging ? 'dragging' : ''}`}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
         <h2>
           <Upload size={18} /> {t('file.select')}
         </h2>
-        <div className="input-group">
+        <div className="input-with-button">
           <input
             type="text"
             placeholder={t('file.browse_hint')}
@@ -106,6 +243,9 @@ const MediaView: React.FC = () => {
             onChange={(e) => setInputPath(e.target.value)}
             onBlur={() => void fetchMediaInfo(inputPath)}
           />
+          <button className="secondary-button" onClick={() => void handleSelectFile()}>
+            <FileSearch size={18} />
+          </button>
         </div>
         {mediaInfo && (
           <div className="media-info-display">
@@ -193,7 +333,24 @@ const MediaView: React.FC = () => {
                   <option value="1920x1080">{t('video_settings.resolution.1080p')}</option>
                   <option value="1280x720">{t('video_settings.resolution.720p')}</option>
                   <option value="854x480">{t('video_settings.resolution.480p')}</option>
+                  <option value="custom">{t('video_settings.resolution.custom')}</option>
                 </select>
+                {maxResolution === 'custom' && (
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                    <input
+                      type="number"
+                      placeholder="W"
+                      value={customWidth}
+                      onChange={(e) => setCustomWidth(e.target.value)}
+                    />
+                    <input
+                      type="number"
+                      placeholder="H"
+                      value={customHeight}
+                      onChange={(e) => setCustomHeight(e.target.value)}
+                    />
+                  </div>
+                )}
               </div>
               <div className="setting-item">
                 <label>{t('video_settings.max_fps')}</label>
@@ -202,6 +359,8 @@ const MediaView: React.FC = () => {
                   <option value="60">60 FPS</option>
                   <option value="30">30 FPS</option>
                   <option value="24">24 FPS</option>
+                  <option value="20">20 FPS</option>
+                  <option value="12">12 FPS</option>
                 </select>
               </div>
             </div>
@@ -215,6 +374,8 @@ const MediaView: React.FC = () => {
                   onChange={(e) => setVideoAudioBitrate(e.target.value)}
                   disabled={!audioEnabled}
                 >
+                  <option value="32k">32k</option>
+                  <option value="64k">64k</option>
                   <option value="128k">128k</option>
                   <option value="192k">192k</option>
                   <option value="256k">256k</option>
@@ -232,6 +393,7 @@ const MediaView: React.FC = () => {
                 </label>
               </div>
             </div>
+            <AudioSettingsSection />
           </>
         ) : (
           <>
@@ -239,6 +401,7 @@ const MediaView: React.FC = () => {
               <div className="setting-item">
                 <label>{t('audio_settings.bitrate')}</label>
                 <select value={audioBitrate} onChange={(e) => setAudioBitrate(e.target.value)}>
+                  <option value="32k">32k</option>
                   <option value="64k">64k</option>
                   <option value="128k">128k</option>
                   <option value="192k">192k</option>
@@ -257,67 +420,9 @@ const MediaView: React.FC = () => {
                 </label>
               </div>
             </div>
+            <AudioSettingsSection />
           </>
         )}
-
-        <div className="section-title">{t('volume.title')}</div>
-        <div className="settings-grid">
-          <div className="setting-item">
-            <label>{t('volume.mode')}</label>
-            <select value={volumeMode} onChange={(e) => setVolumeMode(e.target.value)}>
-              <option value="disabled">{t('volume.modes.disabled')}</option>
-              <option value="auto">{t('volume.modes.auto')}</option>
-              <option value="multiplier">{t('volume.modes.multiplier')}</option>
-              <option value="db">{t('volume.modes.db')}</option>
-            </select>
-          </div>
-          {(volumeMode === 'multiplier' || volumeMode === 'db') && (
-            <div className="setting-item">
-              <label>
-                {volumeMode === 'multiplier' ? t('volume.multiplier_label') : t('volume.db_label')}:
-                {volumeValue}
-                {volumeMode === 'db' ? ' dB' : 'x'}
-              </label>
-              <input
-                type="range"
-                min={volumeMode === 'multiplier' ? '0.1' : '-20'}
-                max={volumeMode === 'multiplier' ? '5.0' : '20'}
-                step={volumeMode === 'multiplier' ? '0.1' : '1'}
-                value={volumeValue}
-                onChange={(e) => setVolumeValue(parseFloat(e.target.value))}
-              />
-            </div>
-          )}
-        </div>
-
-        <div className="section-title">{t('denoise.title')}</div>
-        <div className="settings-grid">
-          <div className="setting-item">
-            <label>
-              <input
-                type="checkbox"
-                checked={denoiseEnabled}
-                onChange={(e) => setDenoiseEnabled(e.target.checked)}
-              />{' '}
-              {t('denoise.enable')}
-            </label>
-          </div>
-          {denoiseEnabled && (
-            <div className="setting-item">
-              <label>
-                {t('denoise.level')}: {denoiseLevel}
-              </label>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.01"
-                value={denoiseLevel}
-                onChange={(e) => setDenoiseLevel(parseFloat(e.target.value))}
-              />
-            </div>
-          )}
-        </div>
       </section>
 
       <section className="action-area">

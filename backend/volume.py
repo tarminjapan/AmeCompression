@@ -132,21 +132,20 @@ def parse_volume_gain(gain_str: str | None) -> tuple[float | None, bool]:
         try:
             return float(gain_str[:-2]), False
         except ValueError:
-            print(f"Error: Invalid dB value '{gain_str}'")
-            sys.exit(1)
+            raise ValueError(f"Invalid dB value '{gain_str}'")
 
     # Treat as multiplier (convert to dB)
     try:
         multiplier = float(gain_str)
-        if multiplier <= 0:
-            print("Error: Volume multiplier must be positive")
-            sys.exit(1)
-        # Convert multiplier to dB: dB = 20 * log10(multiplier)
-        gain_db = 20 * math.log10(multiplier)
-        return round(gain_db, 1), False
     except ValueError:
-        print(f"Error: Invalid volume gain value '{gain_str}'")
-        sys.exit(1)
+        raise ValueError(f"Invalid volume gain value '{gain_str}'")
+
+    if multiplier <= 0:
+        raise ValueError("Volume multiplier must be positive")
+
+    # Convert multiplier to dB: dB = 20 * log10(multiplier)
+    gain_db = 20 * math.log10(multiplier)
+    return round(gain_db, 1), False
 
 
 def build_audio_filter(

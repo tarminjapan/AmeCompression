@@ -5,4 +5,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getApiUrl: () => ipcRenderer.invoke('get-api-url'),
   getBackendStatus: () => ipcRenderer.invoke('get-backend-status'),
   restartBackend: () => ipcRenderer.invoke('restart-backend'),
+  selectFile: () => ipcRenderer.invoke('select-file'),
 })

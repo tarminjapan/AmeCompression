@@ -126,6 +126,11 @@ function createWindow() {
 
   mainWindow.setMenu(null)
 
+  // Prevent default drag and drop behavior
+  mainWindow.webContents.on('will-navigate', (event) => {
+    event.preventDefault()
+  })
+
   const startUrl = isDev
     ? 'http://localhost:5173'
     : `file://${path.join(__dirname, '../dist/index.html')}`
@@ -147,10 +152,11 @@ function killFlask() {
       // On Windows, childProcess.kill() might not kill the entire process tree
       // (especially with Flask's reloader). taskkill is more reliable.
       if (flaskProcess.pid) {
-        const killer = spawn('taskkill', ['/pid', flaskProcess.pid.toString(), '/f', '/t'])
-        killer.on('error', (err) => {
+        try {
+          spawn('taskkill', ['/pid', flaskProcess.pid.toString(), '/f', '/t'])
+        } catch (err) {
           console.error('Failed to execute taskkill:', err)
-        })
+        }
       }
     } else {
       flaskProcess.kill()
@@ -187,6 +193,19 @@ ipcMain.handle('restart-backend', async () => {
   }
   startFlask()
   return true
+})
+
+ipcMain.handle('select-file', async () => {
+  if (!mainWindow) return null
+  const result = await dialog.showOpenDialog(mainWindow, {
+    properties: ['openFile'],
+    filters: [
+      { name: 'Media Files', extensions: ['mp4', 'mkv', 'avi', 'mov', 'mp3', 'wav', 'flac', 'm4a'] },
+      { name: 'All Files', extensions: ['*'] },
+    ],
+  })
+  if (result.canceled) return null
+  return result.filePaths[0]
 })
 
 app.on('ready', () => {
