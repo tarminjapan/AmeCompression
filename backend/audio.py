@@ -33,7 +33,6 @@ from .utils import (
 from .volume import (
     analyze_volume_level,
     build_audio_filter,
-    parse_volume_gain,
     resolve_volume_gain,
 )
 
