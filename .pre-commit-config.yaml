@@ -42,6 +42,12 @@ repos:
         language: system
         types: [python]
         pass_filenames: false
+      - id: mypy
+        name: mypy (static type checker)
+        entry: uv run mypy
+        language: system
+        types: [python]
+        pass_filenames: false
       - id: pytest
         name: pytest
         entry: uv run pytest tests

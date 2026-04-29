@@ -12,6 +12,14 @@ from typing import Protocol
 
 from .models import ProgressEvent
 
+__all__ = [
+    "CancellationSource",
+    "OutputCallback",
+    "ProgressCallback",
+    "ProgressEvent",
+    "ProgressParser",
+]
+
 
 class ProgressCallback(Protocol):
     """Protocol for progress callback functions."""
@@ -36,7 +44,7 @@ class CancellationSource:
     to running compression operations.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._cancelled = False
 
     @property

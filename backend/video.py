@@ -39,6 +39,12 @@ from .volume import (
     resolve_volume_gain,
 )
 
+__all__ = [
+    "analyze_volume_service",
+    "compress_video_service",
+    "get_video_info_safe",
+]
+
 
 def format_bitrate(bitrate: int | float | str | None) -> str:
     """Format bitrate to human readable string."""

@@ -1,6 +1,6 @@
 import time
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, Response, jsonify, request
 
 from ...settings import SettingsManager
 
@@ -9,7 +9,7 @@ settings_manager = SettingsManager.get_instance()
 
 
 @settings_bp.route("", methods=["GET"])
-def get_settings():
+def get_settings() -> Response:
     # Return all settings or default values
     settings = {
         "language": settings_manager.get("language", "en"),
@@ -22,7 +22,7 @@ def get_settings():
 
 
 @settings_bp.route("", methods=["POST"])
-def update_settings():
+def update_settings() -> Response | tuple[Response, int]:
     data = request.json
     if not data:
         return jsonify({"error": "No data provided"}), 400
@@ -33,5 +33,5 @@ def update_settings():
 
 
 @settings_bp.route("/health", methods=["GET"])
-def health_check():
+def health_check() -> Response:
     return jsonify({"status": "healthy", "timestamp": time.time(), "version": "1.0.0"})

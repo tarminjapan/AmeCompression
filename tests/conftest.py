@@ -1,4 +1,5 @@
 import tempfile
+from collections.abc import Generator
 from pathlib import Path
 from unittest.mock import patch
 
@@ -7,7 +8,7 @@ from backend.settings import SettingsManager
 
 
 @pytest.fixture
-def settings_manager(tmp_dir: Path):
+def settings_manager(tmp_dir: Path) -> Generator[SettingsManager, None, None]:
     SettingsManager.reset_instance()
     with patch("backend.settings.get_config_dir", return_value=tmp_dir):
         mgr = SettingsManager.get_instance()
@@ -16,13 +17,13 @@ def settings_manager(tmp_dir: Path):
 
 
 @pytest.fixture
-def tmp_dir():
+def tmp_dir() -> Generator[Path, None, None]:
     with tempfile.TemporaryDirectory() as d:
         yield Path(d)
 
 
 @pytest.fixture
-def sample_video_files(tmp_dir: Path):
+def sample_video_files(tmp_dir: Path) -> list[Path]:
     files = []
     for name in ["video.mp4", "movie.mkv", "clip.avi", "film.mov"]:
         p = tmp_dir / name
@@ -32,7 +33,7 @@ def sample_video_files(tmp_dir: Path):
 
 
 @pytest.fixture
-def sample_audio_files(tmp_dir: Path):
+def sample_audio_files(tmp_dir: Path) -> list[Path]:
     files = []
     for name in ["song.mp3", "track.wav", "audio.flac", "music.aac"]:
         p = tmp_dir / name

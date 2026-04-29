@@ -5,10 +5,10 @@ import json
 import platform
 import subprocess
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 
-def get_ffmpeg_executables():
+def get_ffmpeg_executables() -> tuple[str, str]:
     """Detect OS and return appropriate FFmpeg executable paths.
     Checks for local FFmpeg executables in the bin directory first.
 
@@ -168,7 +168,7 @@ def get_detailed_media_info(
             errors="replace",
             check=True,
         )
-        data = json.loads(result.stdout)
+        data = cast(dict[str, Any], json.loads(result.stdout))
         return data
     except subprocess.CalledProcessError:
         return None
@@ -235,6 +235,13 @@ def get_audio_info(audio_path: str | Path, ffprobe_path: str = "ffprobe") -> dic
         str(audio_path),
     ]
 
+    info: dict[str, Any] = {
+        "duration": None,
+        "bitrate": None,
+        "sample_rate": None,
+        "channels": None,
+    }
+
     try:
         result = subprocess.run(
             cmd,
@@ -247,12 +254,6 @@ def get_audio_info(audio_path: str | Path, ffprobe_path: str = "ffprobe") -> dic
         info = _parse_audio_csv_output(result.stdout)
     except (subprocess.CalledProcessError, FileNotFoundError) as e:
         print(f"Error getting audio info: {e}")
-        info: dict[str, Any] = {
-            "duration": None,
-            "bitrate": None,
-            "sample_rate": None,
-            "channels": None,
-        }
 
     # If duration not found, try format-level duration
     if info["duration"] is None:
@@ -423,6 +424,13 @@ def get_audio_info_safe(
         str(audio_path),
     ]
 
+    info: dict[str, Any] = {
+        "duration": None,
+        "bitrate": None,
+        "sample_rate": None,
+        "channels": None,
+    }
+
     try:
         result = subprocess.run(
             cmd,
@@ -434,12 +442,7 @@ def get_audio_info_safe(
         )
         info = _parse_audio_csv_output(result.stdout)
     except (subprocess.CalledProcessError, FileNotFoundError):
-        info: dict[str, Any] = {
-            "duration": None,
-            "bitrate": None,
-            "sample_rate": None,
-            "channels": None,
-        }
+        pass
 
     if info["duration"] is None:
         format_cmd = [
