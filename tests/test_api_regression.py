@@ -1,3 +1,4 @@
+from collections.abc import Generator
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -8,7 +9,7 @@ from flask.testing import FlaskClient
 
 
 @pytest.fixture
-def client(settings_manager: SettingsManager):
+def client(settings_manager: SettingsManager) -> Generator[FlaskClient, None, None]:
     _ = settings_manager
     app = create_app({"TESTING": True})
     with app.test_client() as client:
@@ -17,7 +18,7 @@ def client(settings_manager: SettingsManager):
         yield client
 
 
-def test_full_video_compression_flow(client: FlaskClient):
+def test_full_video_compression_flow(client: FlaskClient) -> None:
     """Test the full flow of video compression from the API perspective.
     1. Start a video compression job.
     2. Check the job status (should be pending or running).
@@ -66,7 +67,7 @@ def test_full_video_compression_flow(client: FlaskClient):
         assert response.get_json()["result"]["compression_ratio"] == 0.45
 
 
-def test_job_cancellation_flow(client: FlaskClient):
+def test_job_cancellation_flow(client: FlaskClient) -> None:
     """Test the flow of cancelling a job."""
     with (
         patch("backend.api.blueprints.jobs.Path.exists", return_value=True),
@@ -87,7 +88,7 @@ def test_job_cancellation_flow(client: FlaskClient):
         assert response.get_json()["status"] == "cancelling"
 
 
-def test_settings_persistence_integration(client: FlaskClient):
+def test_settings_persistence_integration(client: FlaskClient) -> None:
     """Test that settings updated via API are reflected in subsequent calls."""
     # Update settings
     update_data = {

@@ -2,7 +2,7 @@ import json
 import os
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 
 def get_config_dir() -> Path:
@@ -50,7 +50,7 @@ class SettingsManager:
         if self.settings_file.exists():
             try:
                 with self.settings_file.open(encoding="utf-8") as f:
-                    return json.load(f)
+                    return cast(dict[str, Any], json.load(f))
             except Exception as e:
                 print(f"Error loading settings: {e}")
         return {}

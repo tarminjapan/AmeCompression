@@ -1,3 +1,4 @@
+from collections.abc import Generator
 from unittest.mock import patch
 
 import pytest
@@ -8,7 +9,7 @@ from flask.testing import FlaskClient
 
 
 @pytest.fixture
-def client(settings_manager: SettingsManager):
+def client(settings_manager: SettingsManager) -> Generator[FlaskClient, None, None]:
     _ = settings_manager
     app = create_app({"TESTING": True})
     with app.test_client() as client:
@@ -18,14 +19,14 @@ def client(settings_manager: SettingsManager):
         yield client
 
 
-def test_get_settings(client: FlaskClient):
+def test_get_settings(client: FlaskClient) -> None:
     response = client.get("/api/settings")
     assert response.status_code == 200
     assert "language" in response.get_json()
     assert "appearance_mode" in response.get_json()
 
 
-def test_update_settings(client: FlaskClient):
+def test_update_settings(client: FlaskClient) -> None:
     new_settings = {"language": "ja", "appearance_mode": "dark"}
     response = client.post("/api/settings", json=new_settings)
     assert response.status_code == 200
@@ -37,7 +38,7 @@ def test_update_settings(client: FlaskClient):
     assert response.get_json()["appearance_mode"] == "dark"
 
 
-def test_audio_compression_endpoint(client: FlaskClient):
+def test_audio_compression_endpoint(client: FlaskClient) -> None:
     with (
         patch("backend.api.blueprints.jobs.Path.exists", return_value=True),
         patch("backend.api.blueprints.jobs.compress_audio_service"),
@@ -50,7 +51,7 @@ def test_audio_compression_endpoint(client: FlaskClient):
         assert "task_id" in response.get_json()
 
 
-def test_list_jobs(client: FlaskClient):
+def test_list_jobs(client: FlaskClient) -> None:
     with (
         patch("backend.api.blueprints.jobs.Path.exists", return_value=True),
         patch("backend.api.blueprints.jobs.compress_video_service"),
@@ -64,7 +65,7 @@ def test_list_jobs(client: FlaskClient):
         assert len(response.get_json()) == 2
 
 
-def test_get_job_status(client: FlaskClient):
+def test_get_job_status(client: FlaskClient) -> None:
     with (
         patch("backend.api.blueprints.jobs.Path.exists", return_value=True),
         patch("backend.api.blueprints.jobs.compress_video_service"),
@@ -79,12 +80,12 @@ def test_get_job_status(client: FlaskClient):
         assert response.get_json()["status"] == "pending"
 
 
-def test_get_job_status_not_found(client: FlaskClient):
+def test_get_job_status_not_found(client: FlaskClient) -> None:
     response = client.get("/api/jobs/non-existent-id")
     assert response.status_code == 404
 
 
-def test_media_info_audio(client: FlaskClient):
+def test_media_info_audio(client: FlaskClient) -> None:
     with (
         patch("backend.api.blueprints.media.Path.exists", return_value=True),
         patch("backend.api.blueprints.media.get_video_info_safe", return_value=None),
@@ -99,13 +100,13 @@ def test_media_info_audio(client: FlaskClient):
         assert response.get_json()["bitrate"] == "128k"
 
 
-def test_media_info_not_found(client: FlaskClient):
+def test_media_info_not_found(client: FlaskClient) -> None:
     with patch("backend.api.blueprints.media.Path.exists", return_value=False):
         response = client.get("/api/media-info?path=non-existent.mp4")
         assert response.status_code == 404
 
 
-def test_analyze_volume_endpoint(client: FlaskClient):
+def test_analyze_volume_endpoint(client: FlaskClient) -> None:
     with (
         patch("backend.api.blueprints.media.Path.exists", return_value=True),
         patch(
@@ -118,7 +119,7 @@ def test_analyze_volume_endpoint(client: FlaskClient):
         assert response.get_json()["mean_volume"] == -15.0
 
 
-def test_analyze_volume_error(client: FlaskClient):
+def test_analyze_volume_error(client: FlaskClient) -> None:
     with (
         patch("backend.api.blueprints.media.Path.exists", return_value=True),
         patch(

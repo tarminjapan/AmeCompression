@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Any
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, Response, jsonify, request
 
 from ...audio import get_audio_info_safe
 from ...video import get_video_info_safe
@@ -11,7 +11,7 @@ media_bp = Blueprint("media", __name__)
 
 
 @media_bp.route("/media-info", methods=["GET"])
-def get_info():
+def get_info() -> Response | tuple[Response, int]:
     path = request.args.get("path")
     if not path:
         return jsonify({"error": "Path is required"}), 400
@@ -30,7 +30,7 @@ def get_info():
     # Try audio info
     info = get_audio_info_safe(path_obj)
     if info:
-        info_dict: dict[str, Any] = info
+        info_dict = info
         info_dict["type"] = "audio"
         return jsonify(info_dict)
 
@@ -38,8 +38,10 @@ def get_info():
 
 
 @media_bp.route("/volume/analyze", methods=["POST"])
-def analyze_volume_endpoint():
+def analyze_volume_endpoint() -> Response | tuple[Response, int]:
     data = request.json
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
     path = data.get("path")
     if not path:
         return jsonify({"error": "Path is required"}), 400

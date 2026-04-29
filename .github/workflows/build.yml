@@ -31,6 +31,9 @@ jobs:
       - name: Run backend type checking (warnings fail)
         run: uv run pyright --warnings
 
+      - name: Run backend mypy type checking
+        run: uv run mypy
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -80,6 +83,9 @@ jobs:
 
       - name: Run backend type checking (warnings fail)
         run: uv run pyright --warnings
+
+      - name: Run backend mypy type checking
+        run: uv run mypy
 
       - name: Set up Node.js
         uses: actions/setup-node@v4

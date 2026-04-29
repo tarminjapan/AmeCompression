@@ -36,6 +36,12 @@ from .volume import (
     resolve_volume_gain,
 )
 
+__all__ = [
+    "analyze_audio_volume_service",
+    "compress_audio_service",
+    "get_audio_info_safe",
+]
+
 
 def _prepare_audio_command(params: AudioCompressionParams) -> list[str]:
     """Prepare FFmpeg command for audio compression."""

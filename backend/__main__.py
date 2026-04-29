@@ -16,7 +16,7 @@ except ImportError:
 from .api import create_app
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description="AmeCompression API Server")
     parser.add_argument(
         "--port", type=int, default=5000, help="Port for API server (default: 5000)"

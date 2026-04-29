@@ -1,3 +1,4 @@
+from collections.abc import Generator
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -8,14 +9,14 @@ from flask.testing import FlaskClient
 
 
 @pytest.fixture
-def client(settings_manager: SettingsManager):
+def client(settings_manager: SettingsManager) -> Generator[FlaskClient, None, None]:
     _ = settings_manager
     app = create_app({"TESTING": True})
     with app.test_client() as client:
         yield client
 
 
-def test_api_media_info_endpoint(client: FlaskClient):
+def test_api_media_info_endpoint(client: FlaskClient) -> None:
     with (
         patch("backend.api.blueprints.media.Path.exists", return_value=True),
         patch(
@@ -29,7 +30,7 @@ def test_api_media_info_endpoint(client: FlaskClient):
         assert response.get_json()["type"] == "video"
 
 
-def test_start_task_adds_timestamp(client: FlaskClient):
+def test_start_task_adds_timestamp(client: FlaskClient) -> None:
     with (
         patch("backend.api.blueprints.jobs.Path.exists", return_value=True),
         patch("backend.api.blueprints.jobs.compress_video_service"),
@@ -49,7 +50,7 @@ def test_start_task_adds_timestamp(client: FlaskClient):
             assert isinstance(job_runner.tasks[task_id]["created_at"], float)
 
 
-def test_task_completion_adds_finished_at(client: FlaskClient):
+def test_task_completion_adds_finished_at(client: FlaskClient) -> None:
     mock_result = MagicMock()
     mock_result.status.value = "success"
     mock_result.is_success = True
@@ -79,7 +80,7 @@ def test_task_completion_adds_finished_at(client: FlaskClient):
             assert isinstance(job_runner.tasks[task_id]["finished_at"], float)
 
 
-def test_cancel_task(client: FlaskClient):
+def test_cancel_task(client: FlaskClient) -> None:
     with (
         patch("backend.api.blueprints.jobs.Path.exists", return_value=True),
         patch("backend.api.blueprints.jobs.compress_video_service"),
