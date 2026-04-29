@@ -113,7 +113,7 @@ class CompressionResult:
     compression_ratio: float = 0.0
     duration: float = 0.0
     error_message: str = ""
-    metadata: dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict[str, Any])
 
     @property
     def is_success(self) -> bool:
@@ -221,4 +221,4 @@ class MediaInfo:
     codec_name: str = ""
     codec_long_name: str = ""
     format_name: str = ""
-    metadata: dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict[str, Any])

@@ -24,7 +24,7 @@ def tmp_dir() -> Generator[Path, None, None]:
 
 @pytest.fixture
 def sample_video_files(tmp_dir: Path) -> list[Path]:
-    files = []
+    files: list[Path] = []
     for name in ["video.mp4", "movie.mkv", "clip.avi", "film.mov"]:
         p = tmp_dir / name
         p.write_text("")
@@ -34,7 +34,7 @@ def sample_video_files(tmp_dir: Path) -> list[Path]:
 
 @pytest.fixture
 def sample_audio_files(tmp_dir: Path) -> list[Path]:
-    files = []
+    files: list[Path] = []
     for name in ["song.mp3", "track.wav", "audio.flac", "music.aac"]:
         p = tmp_dir / name
         p.write_text("")

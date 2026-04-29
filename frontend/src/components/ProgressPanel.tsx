@@ -53,7 +53,12 @@ const ProgressPanel: React.FC<ProgressPanelProps> = ({ jobs, onCancel }) => {
             )}
 
             {(job.status === 'running' || job.status === 'starting') && (
-              <button className="cancel-button" onClick={() => onCancel(job.id)}>
+              <button
+                className="cancel-button"
+                onClick={() => {
+                  onCancel(job.id)
+                }}
+              >
                 <X size={14} />
               </button>
             )}

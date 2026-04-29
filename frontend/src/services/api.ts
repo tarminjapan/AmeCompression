@@ -6,10 +6,10 @@ export const api = axios.create({
 
 let isInitialized = false
 
-export const initializeApi = async () => {
+export const initializeApi = async (): Promise<void> => {
   if (isInitialized) return
 
-  if (window.electronAPI && window.electronAPI.getApiUrl) {
+  if (window.electronAPI?.getApiUrl) {
     try {
       const url = await window.electronAPI.getApiUrl()
       api.defaults.baseURL = url
@@ -21,4 +21,4 @@ export const initializeApi = async () => {
   isInitialized = true
 }
 
-export const getApiBase = () => api.defaults.baseURL
+export const getApiBase = (): string | undefined => api.defaults.baseURL

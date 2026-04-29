@@ -18,6 +18,8 @@ i18n
       escapeValue: false,
     },
   })
-  .catch((err) => console.error('Failed to initialize i18n:', err))
+  .catch((err) => {
+    console.error('Failed to initialize i18n:', err)
+  })
 
 export default i18n

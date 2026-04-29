@@ -25,7 +25,9 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onViewChange }) => {
           <button
             key={item.id}
             className={`nav-item ${activeView === item.id ? 'active' : ''}`}
-            onClick={() => onViewChange(item.id)}
+            onClick={() => {
+              onViewChange(item.id)
+            }}
           >
             {item.icon}
             <span>{item.label}</span>

@@ -135,7 +135,7 @@ def _prepare_audio_args(params: VideoCompressionParams) -> list[str]:
     # Resolve volume gain
     gain_db = resolve_volume_gain(params.volume_gain_db, input_path, params.ffmpeg_path)
 
-    args = []
+    args: list[str] = []
     audio_filter = build_audio_filter(gain_db, params.denoise_level)
     if audio_filter:
         args.extend(["-af", audio_filter])
@@ -157,7 +157,7 @@ def _prepare_video_command(
 
     cmd = [params.ffmpeg_path, "-i", str(input_path), "-y"]
 
-    video_filters = []
+    video_filters: list[str] = []
     if scaled_res:
         video_filters.append(f"scale={scaled_res[0]}:{scaled_res[1]}")
     if params.max_fps is not None:

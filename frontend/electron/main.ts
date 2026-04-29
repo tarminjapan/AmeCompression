@@ -9,7 +9,7 @@ import axios from 'axios'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-const isDev = process.env.NODE_ENV === 'development'
+const isDev = process.env['NODE_ENV'] === 'development'
 const API_PORT = 5000
 const API_URL = `http://127.0.0.1:${API_PORT}/api`
 
@@ -30,7 +30,7 @@ async function checkBackendHealth(): Promise<boolean> {
   }
 }
 
-function startFlask() {
+function startFlask(): void {
   // In production, we might want to use a bundled executable
   // For now, we assume python is in the path and use the project root
   const projectRoot = isDev
@@ -112,7 +112,7 @@ function startFlask() {
   })
 }
 
-function createWindow() {
+function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 1100,
     height: 800,
@@ -138,7 +138,7 @@ function createWindow() {
   void mainWindow.loadURL(startUrl)
 
   if (isDev) {
-    void mainWindow.webContents.openDevTools()
+    mainWindow.webContents.openDevTools()
   }
 
   mainWindow.on('closed', () => {
@@ -146,7 +146,7 @@ function createWindow() {
   })
 }
 
-function killFlask() {
+function killFlask(): void {
   if (flaskProcess) {
     if (process.platform === 'win32') {
       // On Windows, childProcess.kill() might not kill the entire process tree
