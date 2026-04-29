@@ -55,9 +55,15 @@ repos:
         pass_filenames: false
         always_run: true
 
-  # Frontend Checks (ESLint & Prettier)
+  # Frontend Checks (TypeScript, ESLint & Prettier)
   - repo: local
     hooks:
+      - id: frontend-tsc
+        name: frontend-tsc (TypeScript type check)
+        entry: npm --prefix frontend run typecheck
+        language: system
+        files: ^frontend/.*\.tsx?$
+        pass_filenames: false
       - id: frontend-eslint
         name: frontend-eslint
         entry: npx --prefix frontend eslint --max-warnings=0

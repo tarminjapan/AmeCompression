@@ -47,6 +47,9 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci --prefix frontend
 
+      - name: Run TypeScript type checking
+        run: npm --prefix frontend run typecheck
+
       - name: Run frontend lint (warnings fail)
         run: npm --prefix frontend run lint:strict
 

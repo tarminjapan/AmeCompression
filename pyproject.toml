@@ -144,10 +144,10 @@ exclude = [
 
 # Strict typing
 reportMissingTypeStubs = "warning"
-reportUnknownMemberType = "none" # Still too noisy for many libraries
-reportUnknownVariableType = "none"
-reportUnknownArgumentType = "none"
-reportUnknownParameterType = "none"
+reportUnknownMemberType = "warning"
+reportUnknownVariableType = "warning"
+reportUnknownArgumentType = "warning"
+reportUnknownParameterType = "warning"
 reportUnusedImport = "error"
 reportUnusedVariable = "error"
 reportUntypedFunctionDecorator = "error"

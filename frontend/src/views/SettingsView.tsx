@@ -33,7 +33,7 @@ const SettingsView: React.FC = () => {
     void fetchSettings()
   }, [fetchSettings])
 
-  const saveSettings = async () => {
+  const saveSettings = async (): Promise<void> => {
     setSaving(true)
     try {
       await api.post<unknown>('/settings', settings)
@@ -45,7 +45,9 @@ const SettingsView: React.FC = () => {
       // Apply theme
       document.documentElement.setAttribute('data-theme', settings.appearance_mode)
 
-      setTimeout(() => setMessage(''), 3000)
+      setTimeout(() => {
+        setMessage('')
+      }, 3000)
     } catch (error) {
       console.error('Failed to save settings', error)
       setMessage(t('common.error'))
@@ -54,11 +56,11 @@ const SettingsView: React.FC = () => {
     }
   }
 
-  const handleLanguageChange = (lang: string) => {
+  const handleLanguageChange = (lang: string): void => {
     setSettings({ ...settings, language: lang })
   }
 
-  const handleThemeChange = (mode: 'light' | 'dark' | 'system') => {
+  const handleThemeChange = (mode: 'light' | 'dark' | 'system'): void => {
     setSettings({ ...settings, appearance_mode: mode })
   }
 
@@ -78,7 +80,9 @@ const SettingsView: React.FC = () => {
             <label>{t('settings.language')}</label>
             <select
               value={settings.language}
-              onChange={(e) => handleLanguageChange(e.target.value)}
+              onChange={(e) => {
+                handleLanguageChange(e.target.value)
+              }}
             >
               <option value="en">{t('settings.language_names.en')}</option>
               <option value="ja">{t('settings.language_names.ja')}</option>
@@ -89,19 +93,25 @@ const SettingsView: React.FC = () => {
             <div className="theme-toggle">
               <button
                 className={`theme-button ${settings.appearance_mode === 'light' ? 'active' : ''}`}
-                onClick={() => handleThemeChange('light')}
+                onClick={() => {
+                  handleThemeChange('light')
+                }}
               >
                 <Sun size={18} /> {t('settings.themes.light')}
               </button>
               <button
                 className={`theme-button ${settings.appearance_mode === 'dark' ? 'active' : ''}`}
-                onClick={() => handleThemeChange('dark')}
+                onClick={() => {
+                  handleThemeChange('dark')
+                }}
               >
                 <Moon size={18} /> {t('settings.themes.dark')}
               </button>
               <button
                 className={`theme-button ${settings.appearance_mode === 'system' ? 'active' : ''}`}
-                onClick={() => handleThemeChange('system')}
+                onClick={() => {
+                  handleThemeChange('system')
+                }}
               >
                 <Monitor size={18} /> {t('settings.themes.system')}
               </button>
@@ -117,7 +127,9 @@ const SettingsView: React.FC = () => {
               <input
                 type="text"
                 value={settings.ffmpeg_path}
-                onChange={(e) => setSettings({ ...settings, ffmpeg_path: e.target.value })}
+                onChange={(e) => {
+                  setSettings({ ...settings, ffmpeg_path: e.target.value })
+                }}
                 placeholder={t('settings.auto_detect')}
               />
             </div>
@@ -131,7 +143,9 @@ const SettingsView: React.FC = () => {
             <input
               type="text"
               value={settings.default_output_dir}
-              onChange={(e) => setSettings({ ...settings, default_output_dir: e.target.value })}
+              onChange={(e) => {
+                setSettings({ ...settings, default_output_dir: e.target.value })
+              }}
               placeholder={t('settings.output_placeholder')}
             />
           </div>

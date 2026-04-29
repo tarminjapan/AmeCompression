@@ -14,6 +14,10 @@ export interface IElectronAPI {
 
 declare global {
   interface Window {
-    electronAPI: IElectronAPI
+    electronAPI?: IElectronAPI
+  }
+
+  interface File {
+    path?: string
   }
 }

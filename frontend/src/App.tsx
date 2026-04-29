@@ -8,7 +8,7 @@ import { useJobs } from './hooks/useJobs'
 import { api, initializeApi } from './services/api'
 import './App.css'
 
-function App() {
+function App(): React.JSX.Element {
   const { i18n } = useTranslation()
   const [activeView, setActiveView] = useState('media')
   const [isReady, setIsReady] = useState(false)
@@ -16,7 +16,7 @@ function App() {
 
   useEffect(() => {
     // Initial settings fetch to apply theme and language
-    const initApp = async () => {
+    const initApp = async (): Promise<void> => {
       try {
         await initializeApi()
 
@@ -44,7 +44,7 @@ function App() {
     return <div className="loading-screen">Loading...</div>
   }
 
-  const renderView = () => {
+  const renderView = (): React.JSX.Element => {
     switch (activeView) {
       case 'media':
         return <MediaView />

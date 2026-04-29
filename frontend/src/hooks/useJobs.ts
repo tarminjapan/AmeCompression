@@ -2,7 +2,10 @@ import { useState, useEffect, useCallback } from 'react'
 import { api, initializeApi } from '../services/api'
 import type { Job } from '../types'
 
-export const useJobs = () => {
+export const useJobs = (): {
+  jobs: Job[]
+  cancelJob: (taskId: string) => Promise<void>
+} => {
   const [jobs, setJobs] = useState<Job[]>([])
 
   const fetchJobs = useCallback(async () => {
@@ -20,10 +23,12 @@ export const useJobs = () => {
     const interval = setInterval(() => {
       void fetchJobs()
     }, 1000)
-    return () => clearInterval(interval)
+    return () => {
+      clearInterval(interval)
+    }
   }, [fetchJobs])
 
-  const cancelJob = async (taskId: string) => {
+  const cancelJob = async (taskId: string): Promise<void> => {
     try {
       await api.delete<unknown>(`/jobs/${taskId}`)
       void fetchJobs()

@@ -160,7 +160,7 @@ def build_audio_filter(
     Returns:
         str: Audio filter string or None if no filters needed
     """
-    audio_filters = []
+    audio_filters: list[str] = []
 
     # Add denoise filter if specified
     if denoise_level is not None and denoise_level > 0:

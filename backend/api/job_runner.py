@@ -33,7 +33,7 @@ class JobRunner:
             time.sleep(cleanup_interval)
             now = time.time()
             with self.tasks_lock:
-                to_delete = []
+                to_delete: list[str] = []
                 for tid, t in self.tasks.items():
                     # Remove tasks that finished more than 1 hour ago
                     if t.get("status") in ["success", "failed", "cancelled"]:
