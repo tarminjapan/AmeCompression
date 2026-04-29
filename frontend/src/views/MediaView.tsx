@@ -230,13 +230,19 @@ const MediaView: React.FC = () => {
       resolution = `${customWidth}x${customHeight}`
     }
 
+    const bitratePattern = /^\d+k$/
+    const resolvedVideoAudioBitrate = bitratePattern.test(videoAudioBitrate)
+      ? videoAudioBitrate
+      : '192k'
+    const resolvedAudioBitrate = bitratePattern.test(audioBitrate) ? audioBitrate : '192k'
+
     try {
       if (mediaType === 'video') {
         const response = await api.post<{ task_id: string }>('/jobs/video', {
           input_path: inputPath,
           crf,
           preset,
-          audio_bitrate: videoAudioBitrate,
+          audio_bitrate: resolvedVideoAudioBitrate,
           audio_enabled: audioEnabled,
           resolution: resolution === 'original' ? null : resolution,
           max_fps: maxFps === 'unlimited' ? null : parseInt(maxFps),
@@ -247,7 +253,7 @@ const MediaView: React.FC = () => {
       } else {
         const response = await api.post<{ task_id: string }>('/jobs/audio', {
           input_path: inputPath,
-          bitrate: audioBitrate,
+          bitrate: resolvedAudioBitrate,
           keep_metadata: keepMetadata,
           volume_gain_db: volumeGain,
           denoise_level: denoiseEnabled ? denoiseLevel : null,
