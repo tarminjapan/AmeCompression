@@ -9,7 +9,7 @@ interface ProgressPanelProps {
 }
 
 function formatTime(seconds: number): string {
-  if (!seconds || seconds <= 0 || !isFinite(seconds)) return '--:--'
+  if (!isFinite(seconds) || seconds < 0) return '--:--'
   const h = Math.floor(seconds / 3600)
   const m = Math.floor((seconds % 3600) / 60)
   const s = Math.floor(seconds % 60)
@@ -20,7 +20,7 @@ function formatTime(seconds: number): string {
 }
 
 function formatTimeShort(seconds: number): string {
-  if (!seconds || seconds <= 0 || !isFinite(seconds)) return ''
+  if (!isFinite(seconds) || seconds < 0) return ''
   const h = Math.floor(seconds / 3600)
   const m = Math.floor((seconds % 3600) / 60)
   const s = Math.floor(seconds % 60)
@@ -82,7 +82,7 @@ const ProgressPanel: React.FC<ProgressPanelProps> = ({ jobs, onCancel }) => {
                 </div>
                 <div className="job-stats secondary-stats">
                   {job.progress.current_time !== undefined &&
-                    job.progress.current_time > 0 &&
+                    job.progress.current_time >= 0 &&
                     job.progress.total_duration !== undefined &&
                     job.progress.total_duration > 0 && (
                       <span className="stat-item">
@@ -93,7 +93,7 @@ const ProgressPanel: React.FC<ProgressPanelProps> = ({ jobs, onCancel }) => {
                         </span>
                       </span>
                     )}
-                  {job.progress.frame !== undefined && job.progress.frame > 0 && (
+                  {job.progress.frame !== undefined && job.progress.frame >= 0 && (
                     <span className="stat-item">
                       <span className="stat-label">{t('compress.frame')}:</span>
                       <span className="stat-value">{job.progress.frame.toLocaleString()}</span>
