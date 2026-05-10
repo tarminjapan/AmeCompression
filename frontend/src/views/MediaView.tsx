@@ -184,20 +184,29 @@ const MediaView: React.FC = () => {
 
   const handleDragOver = (e: React.DragEvent): void => {
     e.preventDefault()
+    e.stopPropagation()
+    e.dataTransfer.dropEffect = 'copy'
     setIsDragging(true)
   }
 
-  const handleDragLeave = (): void => {
+  const handleDragLeave = (e: React.DragEvent): void => {
+    e.preventDefault()
+    e.stopPropagation()
     setIsDragging(false)
   }
 
   const handleDrop = (e: React.DragEvent): void => {
     e.preventDefault()
+    e.stopPropagation()
     setIsDragging(false)
+
     const files = e.dataTransfer.files
     const file = files[0]
     if (file) {
-      const path = file.path
+      const path = window.electronAPI?.getPathForFile
+        ? window.electronAPI.getPathForFile(file)
+        : (file.path ?? '')
+
       if (path) {
         setInputPath(path)
         void fetchMediaInfo(path)

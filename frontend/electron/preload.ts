@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer, webUtils } from 'electron'
 
 contextBridge.exposeInMainWorld('electronAPI', {
   platform: process.platform,
@@ -6,4 +6,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getBackendStatus: () => ipcRenderer.invoke('get-backend-status'),
   restartBackend: () => ipcRenderer.invoke('restart-backend'),
   selectFile: () => ipcRenderer.invoke('select-file'),
+  getPathForFile: (file: File) => webUtils.getPathForFile(file),
 })
