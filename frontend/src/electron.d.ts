@@ -10,7 +10,7 @@ export interface IElectronAPI {
   getBackendStatus: () => Promise<BackendStatus>
   restartBackend: () => Promise<boolean>
   selectFile: () => Promise<string | null>
-  getPathForFile: (file: File) => string
+  getPathForFile?: (file: File) => string | undefined
 }
 
 declare global {

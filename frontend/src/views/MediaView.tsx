@@ -203,9 +203,7 @@ const MediaView: React.FC = () => {
     const files = e.dataTransfer.files
     const file = files[0]
     if (file) {
-      const path = window.electronAPI?.getPathForFile
-        ? window.electronAPI.getPathForFile(file)
-        : (file.path ?? '')
+      const path = window.electronAPI?.getPathForFile?.(file) ?? file.path ?? ''
 
       if (path) {
         setInputPath(path)
