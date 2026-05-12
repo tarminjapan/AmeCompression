@@ -253,11 +253,10 @@ const MediaView: React.FC = () => {
       resolution = `${customWidth}x${customHeight}`
     }
 
-    const bitratePattern = /^\d+$/
-    const resolvedVideoAudioBitrate = bitratePattern.test(videoAudioBitrate)
-      ? `${videoAudioBitrate}k`
+    const resolvedVideoAudioBitrate = BITRATE_REGEX.test(videoAudioBitrate)
+      ? videoAudioBitrate + 'k'
       : '192k'
-    const resolvedAudioBitrate = bitratePattern.test(audioBitrate) ? `${audioBitrate}k` : '192k'
+    const resolvedAudioBitrate = BITRATE_REGEX.test(audioBitrate) ? audioBitrate + 'k' : '192k'
 
     try {
       if (mediaType === 'video') {
