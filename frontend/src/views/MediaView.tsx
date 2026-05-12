@@ -471,9 +471,15 @@ const MediaView: React.FC = () => {
                   disabled={!audioEnabled}
                 />
                 <datalist id="audio-bitrate-options">
+                  <option value="16k" />
+                  <option value="24k" />
                   <option value="32k" />
+                  <option value="40k" />
+                  <option value="48k" />
                   <option value="64k" />
+                  <option value="96k" />
                   <option value="128k" />
+                  <option value="160k" />
                   <option value="192k" />
                   <option value="256k" />
                   <option value="320k" />
@@ -520,9 +526,15 @@ const MediaView: React.FC = () => {
                   }}
                 />
                 <datalist id="audio-bitrate-options-audio">
+                  <option value="16k" />
+                  <option value="24k" />
                   <option value="32k" />
+                  <option value="40k" />
+                  <option value="48k" />
                   <option value="64k" />
+                  <option value="96k" />
                   <option value="128k" />
+                  <option value="160k" />
                   <option value="192k" />
                   <option value="256k" />
                   <option value="320k" />
