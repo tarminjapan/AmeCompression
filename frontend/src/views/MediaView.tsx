@@ -6,20 +6,20 @@ import { api, initializeApi } from '../services/api'
 import type { MediaInfo } from '../types'
 
 const AUDIO_BITRATE_OPTIONS = [
-  '16k',
-  '24k',
-  '32k',
-  '40k',
-  '48k',
-  '64k',
-  '96k',
-  '128k',
-  '160k',
-  '192k',
-  '256k',
-  '320k',
+  '16',
+  '24',
+  '32',
+  '40',
+  '48',
+  '64',
+  '96',
+  '128',
+  '160',
+  '192',
+  '256',
+  '320',
 ]
-const BITRATE_REGEX = /^\d+k$/
+const BITRATE_REGEX = /^\d+$/
 
 interface AudioSettingsSectionProps {
   t: TFunction
@@ -158,11 +158,11 @@ const MediaView: React.FC = () => {
   const [customWidth, setCustomWidth] = useState('')
   const [customHeight, setCustomHeight] = useState('')
   const [maxFps, setMaxFps] = useState('unlimited')
-  const [videoAudioBitrate, setVideoAudioBitrate] = useState('192k')
+  const [videoAudioBitrate, setVideoAudioBitrate] = useState('192')
   const [audioEnabled, setAudioEnabled] = useState(true)
 
   // Audio settings
-  const [audioBitrate, setAudioBitrate] = useState('192k')
+  const [audioBitrate, setAudioBitrate] = useState('192')
   const [keepMetadata, setKeepMetadata] = useState(true)
 
   // Common settings
@@ -253,11 +253,11 @@ const MediaView: React.FC = () => {
       resolution = `${customWidth}x${customHeight}`
     }
 
-    const bitratePattern = /^\d+k$/
+    const bitratePattern = /^\d+$/
     const resolvedVideoAudioBitrate = bitratePattern.test(videoAudioBitrate)
-      ? videoAudioBitrate
+      ? `${videoAudioBitrate}k`
       : '192k'
-    const resolvedAudioBitrate = bitratePattern.test(audioBitrate) ? audioBitrate : '192k'
+    const resolvedAudioBitrate = bitratePattern.test(audioBitrate) ? `${audioBitrate}k` : '192k'
 
     try {
       if (mediaType === 'video') {
@@ -479,11 +479,11 @@ const MediaView: React.FC = () => {
                 <input
                   type="text"
                   list="audio-bitrate-options"
-                  placeholder="e.g. 192k"
+                  placeholder="e.g. 192"
                   value={videoAudioBitrate}
                   onChange={(e) => {
                     const val = e.target.value
-                    setVideoAudioBitrate(BITRATE_REGEX.test(val) ? val : '192k')
+                    setVideoAudioBitrate(BITRATE_REGEX.test(val) ? val : '192')
                   }}
                   disabled={!audioEnabled}
                 />
@@ -527,11 +527,11 @@ const MediaView: React.FC = () => {
                 <input
                   type="text"
                   list="audio-bitrate-options-audio"
-                  placeholder="e.g. 192k"
+                  placeholder="e.g. 192"
                   value={audioBitrate}
                   onChange={(e) => {
                     const val = e.target.value
-                    setAudioBitrate(BITRATE_REGEX.test(val) ? val : '192k')
+                    setAudioBitrate(BITRATE_REGEX.test(val) ? val : '192')
                   }}
                 />
                 <datalist id="audio-bitrate-options-audio">
