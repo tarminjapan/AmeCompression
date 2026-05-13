@@ -98,8 +98,8 @@ const ComboBox: React.FC<ComboBoxProps> = ({ value, onChange, options, placehold
             padding: 0,
             maxHeight: '200px',
             overflowY: 'auto',
-            background: 'var(--color-surface, #1e1e2e)',
-            border: '1px solid var(--color-border, #444)',
+            background: 'var(--card-bg)',
+            border: '1px solid var(--border-color)',
             borderRadius: '4px',
             boxShadow: '0 4px 8px rgba(0,0,0,0.3)',
           }}
@@ -117,7 +117,7 @@ const ComboBox: React.FC<ComboBoxProps> = ({ value, onChange, options, placehold
               style={{
                 padding: '6px 10px',
                 cursor: 'pointer',
-                background: value === opt.value ? 'var(--color-primary, #6c63ff)' : 'transparent',
+                background: value === opt.value ? 'var(--primary-color)' : 'transparent',
                 color: value === opt.value ? '#fff' : 'inherit',
               }}
             >
