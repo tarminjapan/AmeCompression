@@ -19,6 +19,7 @@ const AUDIO_BITRATE_OPTIONS = [
   '256',
   '320',
 ]
+const FPS_OPTIONS = ['240', '144', '120', '90', '60', '50', '48', '30', '25', '24', '20', '12']
 const BITRATE_REGEX = /^\d+$/
 
 interface AudioSettingsSectionProps {
@@ -452,18 +453,11 @@ const MediaView: React.FC = () => {
                   }}
                 >
                   <option value="unlimited">{t('video_settings.fps_options.unlimited')}</option>
-                  <option value="240">240</option>
-                  <option value="144">144</option>
-                  <option value="120">120</option>
-                  <option value="90">90</option>
-                  <option value="60">60</option>
-                  <option value="50">50</option>
-                  <option value="48">48</option>
-                  <option value="30">30</option>
-                  <option value="25">25</option>
-                  <option value="24">24</option>
-                  <option value="20">20</option>
-                  <option value="12">12</option>
+                  {FPS_OPTIONS.map((fps) => (
+                    <option key={fps} value={fps}>
+                      {t('video_settings.fps_options.' + fps, fps + ' FPS')}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
