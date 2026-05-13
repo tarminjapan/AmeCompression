@@ -19,6 +19,7 @@ const AUDIO_BITRATE_OPTIONS = [
   '256',
   '320',
 ]
+const FPS_OPTIONS = ['240', '144', '120', '90', '60', '50', '48', '30', '25', '24', '20', '12']
 const BITRATE_REGEX = /^\d+$/
 
 interface AudioSettingsSectionProps {
@@ -445,29 +446,19 @@ const MediaView: React.FC = () => {
               </div>
               <div className="setting-item">
                 <label>{t('video_settings.max_fps')}</label>
-                <input
-                  type="text"
-                  list="fps-options"
-                  placeholder={t('video_settings.fps_options.unlimited')}
-                  value={maxFps === 'unlimited' ? '' : maxFps}
+                <select
+                  value={maxFps}
                   onChange={(e) => {
-                    setMaxFps(e.target.value || 'unlimited')
+                    setMaxFps(e.target.value)
                   }}
-                />
-                <datalist id="fps-options">
-                  <option value="240" />
-                  <option value="144" />
-                  <option value="120" />
-                  <option value="90" />
-                  <option value="60" />
-                  <option value="50" />
-                  <option value="48" />
-                  <option value="30" />
-                  <option value="25" />
-                  <option value="24" />
-                  <option value="20" />
-                  <option value="12" />
-                </datalist>
+                >
+                  <option value="unlimited">{t('video_settings.fps_options.unlimited')}</option>
+                  {FPS_OPTIONS.map((fps) => (
+                    <option key={fps} value={fps}>
+                      {t('video_settings.fps_options.' + fps, fps + ' FPS')}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
@@ -475,22 +466,19 @@ const MediaView: React.FC = () => {
             <div className="settings-grid">
               <div className="setting-item">
                 <label>{t('video_settings.audio_bitrate')}</label>
-                <input
-                  type="text"
-                  list="audio-bitrate-options"
-                  placeholder="e.g. 192"
+                <select
                   value={videoAudioBitrate}
                   onChange={(e) => {
-                    const val = e.target.value
-                    setVideoAudioBitrate(BITRATE_REGEX.test(val) ? val : '192')
+                    setVideoAudioBitrate(e.target.value)
                   }}
                   disabled={!audioEnabled}
-                />
-                <datalist id="audio-bitrate-options">
+                >
                   {AUDIO_BITRATE_OPTIONS.map((br) => (
-                    <option key={br} value={br} />
+                    <option key={br} value={br}>
+                      {br}
+                    </option>
                   ))}
-                </datalist>
+                </select>
               </div>
               <div className="setting-item">
                 <label>
@@ -523,21 +511,18 @@ const MediaView: React.FC = () => {
             <div className="settings-grid">
               <div className="setting-item">
                 <label>{t('audio_settings.bitrate')}</label>
-                <input
-                  type="text"
-                  list="audio-bitrate-options-audio"
-                  placeholder="e.g. 192"
+                <select
                   value={audioBitrate}
                   onChange={(e) => {
-                    const val = e.target.value
-                    setAudioBitrate(BITRATE_REGEX.test(val) ? val : '192')
+                    setAudioBitrate(e.target.value)
                   }}
-                />
-                <datalist id="audio-bitrate-options-audio">
+                >
                   {AUDIO_BITRATE_OPTIONS.map((br) => (
-                    <option key={br} value={br} />
+                    <option key={br} value={br}>
+                      {br}
+                    </option>
                   ))}
-                </datalist>
+                </select>
               </div>
               <div className="setting-item">
                 <label>
