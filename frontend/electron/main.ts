@@ -116,6 +116,7 @@ function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 1100,
     height: 800,
+    icon: path.join(__dirname, '../public/favicon.svg'),
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
