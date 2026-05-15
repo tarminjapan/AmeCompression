@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain, Menu, session } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, session } from 'electron'
 import * as path from 'path'
 import * as fs from 'fs'
 import { spawn, ChildProcess } from 'child_process'
@@ -112,11 +112,18 @@ function startFlask(): void {
   })
 }
 
+function getIconPath(): string {
+  return isDev
+    ? path.join(__dirname, '../public/icon.png')
+    : path.join(process.resourcesPath, 'app', 'frontend', 'public', 'icon.png')
+}
+
 function createWindow(): void {
+  const iconImage = nativeImage.createFromPath(getIconPath())
   mainWindow = new BrowserWindow({
     width: 1100,
     height: 800,
-    icon: path.join(__dirname, '../public/favicon.svg'),
+    icon: iconImage,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
