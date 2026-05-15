@@ -368,7 +368,7 @@ const MediaView: React.FC = () => {
 
     try {
       if (mediaType === 'video') {
-        await api.post('/jobs/video', {
+        await api.post<{ task_id: string }>('/jobs/video', {
           input_path: inputPath,
           crf,
           preset,
@@ -380,7 +380,7 @@ const MediaView: React.FC = () => {
           denoise_level: denoiseEnabled ? denoiseLevel : null,
         })
       } else {
-        await api.post('/jobs/audio', {
+        await api.post<{ task_id: string }>('/jobs/audio', {
           input_path: inputPath,
           bitrate: resolvedAudioBitrate,
           keep_metadata: keepMetadata,
