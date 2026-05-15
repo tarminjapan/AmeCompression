@@ -1,6 +1,6 @@
-# Contributing to AmeCompression
+# Contributing to AME Compression
 
-Thank you for your interest in contributing to AmeCompression! This document provides guidelines for contributing to the project.
+Thank you for your interest in contributing to AME Compression! This document provides guidelines for contributing to the project.
 
 ## Development Setup
 
@@ -16,7 +16,7 @@ Thank you for your interest in contributing to AmeCompression! This document pro
 ```bash
 # Clone the repository
 git clone https://github.com/tarminjapan/AmeCompression.git
-cd AmeCompression
+cd AME-Compression
 
 # Install dependencies
 uv sync --extra dev
@@ -28,7 +28,7 @@ uv run pre-commit install
 ### Project Structure
 
 ```text
-AmeCompression/
+AME-Compression/
 ├── frontend/               # Electron + React interface
 │   ├── src/                # React source code
 │   ├── electron/           # Electron main/preload scripts
@@ -44,7 +44,7 @@ AmeCompression/
 │   └── utils.py            # Common utility functions
 ├── tests/                  # Test files (pytest)
 ├── scripts/                # Build and utility scripts
-├── AmeCompression.spec     # PyInstaller spec file
+├── AME-Compression.spec    # PyInstaller spec file
 └── pyproject.toml          # Backend project configuration
 ```
 
