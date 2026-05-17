@@ -83,7 +83,8 @@ const DEFAULT_SETTINGS: Omit<MediaProfile, 'name'> = {
 function loadProfiles(): MediaProfile[] {
   try {
     const raw = localStorage.getItem(PROFILE_STORAGE_KEY)
-    return raw ? JSON.parse(raw) : []
+    const parsed = raw ? JSON.parse(raw) : []
+    return Array.isArray(parsed) ? parsed : []
   } catch {
     return []
   }
@@ -356,18 +357,17 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
       showMessage(t('profile.name_required'))
       return
     }
-    const existing = profiles.findIndex((p) => p.name === name)
-    if (existing >= 0) {
+    const existingIndex = profiles.findIndex((p) => p.name === name)
+    let updated: MediaProfile[]
+    if (existingIndex >= 0) {
       if (!window.confirm(t('profile.overwrite_confirm', { name }))) return
-      const updated = [...profiles]
-      updated[existing] = { ...currentSettings, name }
-      setProfiles(updated)
-      saveProfiles(updated)
+      updated = [...profiles]
+      updated[existingIndex] = { ...currentSettings, name }
     } else {
-      const updated = [...profiles, { ...currentSettings, name }]
-      setProfiles(updated)
-      saveProfiles(updated)
+      updated = [...profiles, { ...currentSettings, name }]
     }
+    setProfiles(updated)
+    saveProfiles(updated)
     showMessage(t('profile.saved', { name }))
     setProfileName('')
   }
@@ -412,6 +412,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
           className="secondary-button profile-btn"
           onClick={handleSave}
           title={t('profile.save')}
+          aria-label={t('profile.save')}
         >
           <Save size={14} />
         </button>
@@ -419,6 +420,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
           className="secondary-button profile-btn"
           onClick={handleDefaults}
           title={t('profile.load_defaults')}
+          aria-label={t('profile.load_defaults')}
         >
           <RotateCcw size={14} />
         </button>
@@ -439,6 +441,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
                   handleLoad(profile)
                 }}
                 title={t('profile.load')}
+                aria-label={t('profile.load')}
               >
                 <FolderOpen size={14} />
               </button>
@@ -448,6 +451,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
                   handleDelete(profile.name)
                 }}
                 title={t('profile.delete')}
+                aria-label={t('profile.delete')}
               >
                 <Trash2 size={14} />
               </button>
@@ -511,7 +515,7 @@ const MediaView: React.FC = () => {
     denoiseLevel,
   }
 
-  const applyProfile = (settings: Omit<MediaProfile, 'name'>): void => {
+  const applyProfile = useCallback((settings: Omit<MediaProfile, 'name'>): void => {
     setMediaType(settings.mediaType)
     setCrf(settings.crf)
     setPreset(settings.preset)
@@ -527,11 +531,11 @@ const MediaView: React.FC = () => {
     setVolumeValue(settings.volumeValue)
     setDenoiseEnabled(settings.denoiseEnabled)
     setDenoiseLevel(settings.denoiseLevel)
-  }
+  }, [])
 
-  const applyDefaults = (): void => {
+  const applyDefaults = useCallback((): void => {
     applyProfile(DEFAULT_SETTINGS)
-  }
+  }, [applyProfile])
 
   const handleSelectFiles = async (): Promise<void> => {
     if (!window.electronAPI) return
