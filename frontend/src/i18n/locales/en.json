@@ -218,5 +218,21 @@
   "notification": {
     "success_body": "{{type}} compression completed successfully.",
     "failed_body": "{{type}} compression failed."
+  },
+  "profile": {
+    "title": "Settings Profile",
+    "save": "Save Profile",
+    "load": "Load Profile",
+    "delete": "Delete",
+    "name_placeholder": "Enter profile name",
+    "no_profiles": "No saved profiles",
+    "saved": "Profile \"{{name}}\" saved.",
+    "loaded": "Profile \"{{name}}\" loaded.",
+    "deleted": "Profile \"{{name}}\" deleted.",
+    "load_defaults": "Reset to Defaults",
+    "defaults_loaded": "Default settings loaded.",
+    "name_required": "Please enter a profile name.",
+    "overwrite_confirm": "Profile \"{{name}}\" already exists. Overwrite?",
+    "select_profile": "Select profile"
   }
 }

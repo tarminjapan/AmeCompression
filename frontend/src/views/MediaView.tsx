@@ -1,7 +1,19 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
-import { Upload, Settings, Play, Loader2, FileSearch, ChevronDown, X } from 'lucide-react'
+import {
+  Upload,
+  Settings,
+  Play,
+  Loader2,
+  FileSearch,
+  ChevronDown,
+  X,
+  Save,
+  FolderOpen,
+  RotateCcw,
+  Trash2,
+} from 'lucide-react'
 import { api } from '../services/api'
 
 const AUDIO_EXTENSIONS = new Set(['mp3', 'wav', 'flac', 'm4a'])
@@ -28,6 +40,59 @@ const AUDIO_BITRATE_OPTIONS = [
 ]
 const FPS_OPTIONS = ['240', '144', '120', '90', '60', '50', '48', '30', '25', '24', '20', '12']
 const BITRATE_REGEX = /^\d+$/
+
+interface MediaProfile {
+  name: string
+  mediaType: 'video' | 'audio'
+  crf: number
+  preset: number
+  maxResolution: string
+  customWidth: string
+  customHeight: string
+  maxFps: string
+  videoAudioBitrate: string
+  audioEnabled: boolean
+  audioBitrate: string
+  keepMetadata: boolean
+  volumeMode: string
+  volumeValue: number
+  denoiseEnabled: boolean
+  denoiseLevel: number
+}
+
+const PROFILE_STORAGE_KEY = 'ame-media-profiles'
+
+const DEFAULT_SETTINGS: Omit<MediaProfile, 'name'> = {
+  mediaType: 'video',
+  crf: 25,
+  preset: 6,
+  maxResolution: 'original',
+  customWidth: '',
+  customHeight: '',
+  maxFps: 'unlimited',
+  videoAudioBitrate: '192',
+  audioEnabled: true,
+  audioBitrate: '192',
+  keepMetadata: true,
+  volumeMode: 'disabled',
+  volumeValue: 0,
+  denoiseEnabled: false,
+  denoiseLevel: 0.15,
+}
+
+function loadProfiles(): MediaProfile[] {
+  try {
+    const raw = localStorage.getItem(PROFILE_STORAGE_KEY)
+    const parsed = raw ? JSON.parse(raw) : []
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
+function saveProfiles(profiles: MediaProfile[]): void {
+  localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profiles))
+}
 
 interface ComboBoxProps {
   value: string
@@ -262,6 +327,147 @@ const AudioSettingsSection: React.FC<AudioSettingsSectionProps> = ({
   </>
 )
 
+interface ProfileSectionProps {
+  t: TFunction
+  currentSettings: Omit<MediaProfile, 'name'>
+  onApplyProfile: (profile: Omit<MediaProfile, 'name'>) => void
+  onApplyDefaults: () => void
+}
+
+const ProfileSection: React.FC<ProfileSectionProps> = ({
+  t,
+  currentSettings,
+  onApplyProfile,
+  onApplyDefaults,
+}) => {
+  const [profiles, setProfiles] = useState<MediaProfile[]>(loadProfiles)
+  const [profileName, setProfileName] = useState('')
+  const [statusMessage, setStatusMessage] = useState('')
+
+  const showMessage = useCallback((msg: string) => {
+    setStatusMessage(msg)
+    setTimeout(() => {
+      setStatusMessage('')
+    }, 3000)
+  }, [])
+
+  const handleSave = (): void => {
+    const name = profileName.trim()
+    if (!name) {
+      showMessage(t('profile.name_required'))
+      return
+    }
+    const existingIndex = profiles.findIndex((p) => p.name === name)
+    let updated: MediaProfile[]
+    if (existingIndex >= 0) {
+      if (!window.confirm(t('profile.overwrite_confirm', { name }))) return
+      updated = [...profiles]
+      updated[existingIndex] = { ...currentSettings, name }
+    } else {
+      updated = [...profiles, { ...currentSettings, name }]
+    }
+    setProfiles(updated)
+    saveProfiles(updated)
+    showMessage(t('profile.saved', { name }))
+    setProfileName('')
+  }
+
+  const handleLoad = (profile: MediaProfile): void => {
+    const { name: _name, ...settings } = profile
+    onApplyProfile(settings)
+    showMessage(t('profile.loaded', { name: _name }))
+  }
+
+  const handleDelete = (name: string): void => {
+    const updated = profiles.filter((p) => p.name !== name)
+    setProfiles(updated)
+    saveProfiles(updated)
+    showMessage(t('profile.deleted', { name }))
+  }
+
+  const handleDefaults = (): void => {
+    onApplyDefaults()
+    showMessage(t('profile.defaults_loaded'))
+  }
+
+  return (
+    <div style={{ marginBottom: '12px' }}>
+      <div className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <Save size={16} /> {t('profile.title')}
+      </div>
+      <div className="profile-bar">
+        <input
+          type="text"
+          value={profileName}
+          onChange={(e) => {
+            setProfileName(e.target.value)
+          }}
+          placeholder={t('profile.name_placeholder')}
+          className="profile-name-input"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') handleSave()
+          }}
+        />
+        <button
+          className="secondary-button profile-btn"
+          onClick={handleSave}
+          title={t('profile.save')}
+          aria-label={t('profile.save')}
+        >
+          <Save size={14} />
+        </button>
+        <button
+          className="secondary-button profile-btn"
+          onClick={handleDefaults}
+          title={t('profile.load_defaults')}
+          aria-label={t('profile.load_defaults')}
+        >
+          <RotateCcw size={14} />
+        </button>
+      </div>
+      {profiles.length > 0 && (
+        <div className="profile-list">
+          {profiles.map((profile) => (
+            <div key={profile.name} className="profile-item">
+              <span className="profile-item-name" title={profile.name}>
+                {profile.name}
+              </span>
+              <span className="profile-item-type">
+                {profile.mediaType === 'video' ? t('nav.video') : t('nav.audio')}
+              </span>
+              <button
+                className="secondary-button profile-action-btn"
+                onClick={() => {
+                  handleLoad(profile)
+                }}
+                title={t('profile.load')}
+                aria-label={t('profile.load')}
+              >
+                <FolderOpen size={14} />
+              </button>
+              <button
+                className="secondary-button profile-action-btn"
+                onClick={() => {
+                  handleDelete(profile.name)
+                }}
+                title={t('profile.delete')}
+                aria-label={t('profile.delete')}
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+      {statusMessage && (
+        <div className="status-message" style={{ marginTop: '8px' }}>
+          {statusMessage}
+        </div>
+      )}
+    </div>
+  )
+}
+
 const MediaView: React.FC = () => {
   const { t } = useTranslation()
   const [inputPaths, setInputPaths] = useState<string[]>([])
@@ -290,6 +496,46 @@ const MediaView: React.FC = () => {
   const [loading, setLoading] = useState(false)
   const [mediaType, setMediaType] = useState<'video' | 'audio'>('video')
   const [isDragging, setIsDragging] = useState(false)
+
+  const currentSettings: Omit<MediaProfile, 'name'> = {
+    mediaType,
+    crf,
+    preset,
+    maxResolution,
+    customWidth,
+    customHeight,
+    maxFps,
+    videoAudioBitrate,
+    audioEnabled,
+    audioBitrate,
+    keepMetadata,
+    volumeMode,
+    volumeValue,
+    denoiseEnabled,
+    denoiseLevel,
+  }
+
+  const applyProfile = useCallback((settings: Omit<MediaProfile, 'name'>): void => {
+    setMediaType(settings.mediaType)
+    setCrf(settings.crf)
+    setPreset(settings.preset)
+    setMaxResolution(settings.maxResolution)
+    setCustomWidth(settings.customWidth)
+    setCustomHeight(settings.customHeight)
+    setMaxFps(settings.maxFps)
+    setVideoAudioBitrate(settings.videoAudioBitrate)
+    setAudioEnabled(settings.audioEnabled)
+    setAudioBitrate(settings.audioBitrate)
+    setKeepMetadata(settings.keepMetadata)
+    setVolumeMode(settings.volumeMode)
+    setVolumeValue(settings.volumeValue)
+    setDenoiseEnabled(settings.denoiseEnabled)
+    setDenoiseLevel(settings.denoiseLevel)
+  }, [])
+
+  const applyDefaults = useCallback((): void => {
+    applyProfile(DEFAULT_SETTINGS)
+  }, [applyProfile])
 
   const handleSelectFiles = async (): Promise<void> => {
     if (!window.electronAPI) return
@@ -522,6 +768,13 @@ const MediaView: React.FC = () => {
           <Settings size={18} />{' '}
           {mediaType === 'video' ? t('video_settings.title') : t('audio_settings.title')}
         </h2>
+
+        <ProfileSection
+          t={t}
+          currentSettings={currentSettings}
+          onApplyProfile={applyProfile}
+          onApplyDefaults={applyDefaults}
+        />
 
         {mediaType === 'video' ? (
           <>

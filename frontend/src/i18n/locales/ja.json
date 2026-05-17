@@ -218,5 +218,21 @@
   "notification": {
     "success_body": "{{type}}圧縮が完了しました。",
     "failed_body": "{{type}}圧縮に失敗しました。"
+  },
+  "profile": {
+    "title": "設定プロファイル",
+    "save": "プロファイルを保存",
+    "load": "プロファイルを読込",
+    "delete": "削除",
+    "name_placeholder": "プロファイル名を入力",
+    "no_profiles": "保存されたプロファイルはありません",
+    "saved": "プロファイル「{{name}}」を保存しました。",
+    "loaded": "プロファイル「{{name}}」を読み込みました。",
+    "deleted": "プロファイル「{{name}}」を削除しました。",
+    "load_defaults": "デフォルト設定に戻す",
+    "defaults_loaded": "デフォルト設定を読み込みました。",
+    "name_required": "プロファイル名を入力してください。",
+    "overwrite_confirm": "プロファイル「{{name}}」は既に存在します。上書きしますか？",
+    "select_profile": "プロファイルを選択"
   }
 }
