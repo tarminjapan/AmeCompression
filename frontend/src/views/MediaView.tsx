@@ -4,6 +4,14 @@ import type { TFunction } from 'i18next'
 import { Upload, Settings, Play, Loader2, FileSearch, ChevronDown, X } from 'lucide-react'
 import { api } from '../services/api'
 
+const AUDIO_EXTENSIONS = new Set(['mp3', 'wav', 'flac', 'm4a'])
+
+function detectMediaType(filePath: string): 'video' | 'audio' {
+  const ext = filePath.split('.').pop()?.toLowerCase() ?? ''
+  if (AUDIO_EXTENSIONS.has(ext)) return 'audio'
+  return 'video'
+}
+
 const AUDIO_BITRATE_OPTIONS = [
   '16',
   '24',
@@ -375,10 +383,11 @@ const MediaView: React.FC = () => {
     const resolvedAudioBitrate = BITRATE_REGEX.test(audioBitrate) ? audioBitrate + 'k' : '192k'
 
     try {
-      for (const inputPath of inputPaths) {
-        try {
-          if (mediaType === 'video') {
-            await api.post<{ task_id: string }>('/jobs/video', {
+      const tasks = inputPaths.map((inputPath) => {
+        const detectedType = detectMediaType(inputPath)
+        if (detectedType === 'video') {
+          return api
+            .post<{ task_id: string }>('/jobs/video', {
               input_path: inputPath,
               crf,
               preset,
@@ -389,19 +398,24 @@ const MediaView: React.FC = () => {
               volume_gain_db: volumeGain,
               denoise_level: denoiseEnabled ? denoiseLevel : null,
             })
-          } else {
-            await api.post<{ task_id: string }>('/jobs/audio', {
+            .catch((error) => {
+              console.error(`Failed to start compression for ${inputPath}`, error)
+            })
+        } else {
+          return api
+            .post<{ task_id: string }>('/jobs/audio', {
               input_path: inputPath,
               bitrate: resolvedAudioBitrate,
               keep_metadata: keepMetadata,
               volume_gain_db: volumeGain,
               denoise_level: denoiseEnabled ? denoiseLevel : null,
             })
-          }
-        } catch (error) {
-          console.error(`Failed to start compression for ${inputPath}`, error)
+            .catch((error) => {
+              console.error(`Failed to start compression for ${inputPath}`, error)
+            })
         }
-      }
+      })
+      await Promise.all(tasks)
     } finally {
       setLoading(false)
     }
@@ -444,7 +458,7 @@ const MediaView: React.FC = () => {
         {inputPaths.length > 0 && (
           <div className="file-list">
             {inputPaths.map((filePath, index) => (
-              <div key={`${filePath}-${index}`} className="file-list-item">
+              <div key={filePath} className="file-list-item">
                 <span className="file-list-path" title={filePath}>
                   {filePath.split(/[\\/]/).pop()}
                 </span>
