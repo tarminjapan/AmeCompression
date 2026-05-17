@@ -13,6 +13,17 @@ function App(): React.JSX.Element {
   const [activeView, setActiveView] = useState('media')
   const [isReady, setIsReady] = useState(false)
   const { jobs, cancelJob } = useJobs()
+  const [dismissedJobIds, setDismissedJobIds] = useState<Set<string>>(new Set())
+
+  const visibleJobs = jobs.filter((job) => !dismissedJobIds.has(job.id))
+
+  const handleDismissJob = (id: string): void => {
+    setDismissedJobIds((prev) => {
+      const next = new Set(prev)
+      next.add(id)
+      return next
+    })
+  }
 
   useEffect(() => {
     // Initial settings fetch to apply theme and language
@@ -65,7 +76,11 @@ function App(): React.JSX.Element {
       <Layout activeView={activeView} onViewChange={setActiveView}>
         {renderView()}
       </Layout>
-      <ProgressPanel jobs={jobs} onCancel={(id) => void cancelJob(id)} />
+      <ProgressPanel
+        jobs={visibleJobs}
+        onCancel={(id) => void cancelJob(id)}
+        onDismiss={handleDismissJob}
+      />
     </>
   )
 }

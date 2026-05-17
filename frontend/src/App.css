@@ -571,6 +571,20 @@ input[type='range'] {
   color: #ef4444;
 }
 
+.dismiss-button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--text-muted);
+}
+
+.dismiss-button:hover {
+  color: #ef4444;
+}
+
 .combobox-option:hover {
   background: rgba(59, 130, 246, 0.1);
 }
