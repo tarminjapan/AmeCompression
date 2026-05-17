@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
-import { Upload, Settings, Play, Loader2, FileSearch, ChevronDown } from 'lucide-react'
-import { api, initializeApi } from '../services/api'
-import type { MediaInfo } from '../types'
+import { Upload, Settings, Play, Loader2, FileSearch, ChevronDown, X } from 'lucide-react'
+import { api } from '../services/api'
 
 const AUDIO_BITRATE_OPTIONS = [
   '16',
@@ -257,8 +256,8 @@ const AudioSettingsSection: React.FC<AudioSettingsSectionProps> = ({
 
 const MediaView: React.FC = () => {
   const { t } = useTranslation()
-  const [inputPath, setInputPath] = useState('')
-  const [mediaInfo, setMediaInfo] = useState<MediaInfo | null>(null)
+  const [inputPaths, setInputPaths] = useState<string[]>([])
+  const [manualInput, setManualInput] = useState('')
 
   // Video settings
   const [crf, setCrf] = useState(25)
@@ -284,25 +283,14 @@ const MediaView: React.FC = () => {
   const [mediaType, setMediaType] = useState<'video' | 'audio'>('video')
   const [isDragging, setIsDragging] = useState(false)
 
-  const fetchMediaInfo = useCallback(async (path: string) => {
-    if (!path) return
-    try {
-      await initializeApi()
-      const response = await api.get<MediaInfo>(`/media-info?path=${encodeURIComponent(path)}`)
-      setMediaInfo(response.data)
-      setMediaType(response.data.type)
-    } catch (error) {
-      console.error('Failed to fetch media info', error)
-      setMediaInfo(null)
-    }
-  }, [])
-
-  const handleSelectFile = async (): Promise<void> => {
+  const handleSelectFiles = async (): Promise<void> => {
     if (!window.electronAPI) return
-    const path = await window.electronAPI.selectFile()
-    if (path) {
-      setInputPath(path)
-      void fetchMediaInfo(path)
+    const paths = await window.electronAPI.selectFiles()
+    if (paths && paths.length > 0) {
+      setInputPaths((prev) => {
+        const newPaths = paths.filter((p) => !prev.includes(p))
+        return [...prev, ...newPaths]
+      })
     }
   }
 
@@ -325,15 +313,35 @@ const MediaView: React.FC = () => {
     setIsDragging(false)
 
     const files = e.dataTransfer.files
-    const file = files[0]
-    if (file) {
-      const path = window.electronAPI?.getPathForFile?.(file) ?? file.path ?? ''
-
-      if (path) {
-        setInputPath(path)
-        void fetchMediaInfo(path)
+    const newPaths: string[] = []
+    for (const file of files) {
+      const filePath = window.electronAPI?.getPathForFile?.(file) ?? file.path ?? ''
+      if (filePath && !newPaths.includes(filePath)) {
+        newPaths.push(filePath)
       }
     }
+    if (newPaths.length > 0) {
+      setInputPaths((prev) => {
+        const filtered = newPaths.filter((p) => !prev.includes(p))
+        return [...prev, ...filtered]
+      })
+    }
+  }
+
+  const addManualPath = (): void => {
+    const trimmed = manualInput.trim()
+    if (trimmed && !inputPaths.includes(trimmed)) {
+      setInputPaths((prev) => [...prev, trimmed])
+      setManualInput('')
+    }
+  }
+
+  const removeFile = (index: number): void => {
+    setInputPaths((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  const clearFiles = (): void => {
+    setInputPaths([])
   }
 
   useEffect(() => {
@@ -367,29 +375,33 @@ const MediaView: React.FC = () => {
     const resolvedAudioBitrate = BITRATE_REGEX.test(audioBitrate) ? audioBitrate + 'k' : '192k'
 
     try {
-      if (mediaType === 'video') {
-        await api.post<{ task_id: string }>('/jobs/video', {
-          input_path: inputPath,
-          crf,
-          preset,
-          audio_bitrate: resolvedVideoAudioBitrate,
-          audio_enabled: audioEnabled,
-          resolution: resolution === 'original' ? null : resolution,
-          max_fps: maxFps === 'unlimited' ? null : parseInt(maxFps),
-          volume_gain_db: volumeGain,
-          denoise_level: denoiseEnabled ? denoiseLevel : null,
-        })
-      } else {
-        await api.post<{ task_id: string }>('/jobs/audio', {
-          input_path: inputPath,
-          bitrate: resolvedAudioBitrate,
-          keep_metadata: keepMetadata,
-          volume_gain_db: volumeGain,
-          denoise_level: denoiseEnabled ? denoiseLevel : null,
-        })
+      for (const inputPath of inputPaths) {
+        try {
+          if (mediaType === 'video') {
+            await api.post<{ task_id: string }>('/jobs/video', {
+              input_path: inputPath,
+              crf,
+              preset,
+              audio_bitrate: resolvedVideoAudioBitrate,
+              audio_enabled: audioEnabled,
+              resolution: resolution === 'original' ? null : resolution,
+              max_fps: maxFps === 'unlimited' ? null : parseInt(maxFps),
+              volume_gain_db: volumeGain,
+              denoise_level: denoiseEnabled ? denoiseLevel : null,
+            })
+          } else {
+            await api.post<{ task_id: string }>('/jobs/audio', {
+              input_path: inputPath,
+              bitrate: resolvedAudioBitrate,
+              keep_metadata: keepMetadata,
+              volume_gain_db: volumeGain,
+              denoise_level: denoiseEnabled ? denoiseLevel : null,
+            })
+          }
+        } catch (error) {
+          console.error(`Failed to start compression for ${inputPath}`, error)
+        }
       }
-    } catch (error) {
-      console.error('Failed to start compression', error)
     } finally {
       setLoading(false)
     }
@@ -411,44 +423,62 @@ const MediaView: React.FC = () => {
         onDrop={handleDrop}
       >
         <h2>
-          <Upload size={18} /> {t('file.select')}
+          <Upload size={18} /> {t('file.select_multiple')}
         </h2>
         <div className="input-with-button">
           <input
             type="text"
             placeholder={t('file.browse_hint')}
-            value={inputPath}
+            value={manualInput}
             onChange={(e) => {
-              setInputPath(e.target.value)
+              setManualInput(e.target.value)
             }}
-            onBlur={() => void fetchMediaInfo(inputPath)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') addManualPath()
+            }}
           />
-          <button className="secondary-button" onClick={() => void handleSelectFile()}>
+          <button className="secondary-button" onClick={() => void handleSelectFiles()}>
             <FileSearch size={18} />
           </button>
         </div>
-        {mediaInfo && (
-          <div className="media-info-display">
-            <p>
-              <strong>{t('file.format')}:</strong> {mediaInfo.type}
-            </p>
-            {mediaInfo.type === 'video' && (
-              <p>
-                <strong>{t('video_settings.resolution.original')}:</strong> {mediaInfo.width}x
-                {mediaInfo.height}
-              </p>
-            )}
-            {mediaInfo.type === 'audio' && (
-              <p>
-                <strong>{t('audio_settings.bitrate')}:</strong>{' '}
-                {mediaInfo.bitrate ? `${Math.round(mediaInfo.bitrate / 1000)}kbps` : 'Unknown'}
-              </p>
-            )}
-            <p>
-              <strong>{t('file.duration')}:</strong> {Math.round(mediaInfo.duration)}s
-            </p>
+        {inputPaths.length > 0 && (
+          <div className="file-list">
+            {inputPaths.map((filePath, index) => (
+              <div key={`${filePath}-${index}`} className="file-list-item">
+                <span className="file-list-path" title={filePath}>
+                  {filePath.split(/[\\/]/).pop()}
+                </span>
+                <button
+                  className="file-remove-button"
+                  onClick={() => {
+                    removeFile(index)
+                  }}
+                  aria-label={t('file.remove')}
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            ))}
           </div>
         )}
+        <div className="file-list-actions">
+          {inputPaths.length > 0 ? (
+            <>
+              <span className="file-count">
+                {t('file.selected_count', { count: inputPaths.length })}
+              </span>
+              <button
+                className="secondary-button"
+                onClick={clearFiles}
+                style={{ fontSize: '0.8rem', padding: '4px 8px' }}
+              >
+                {t('file.clear_all')}
+              </button>
+            </>
+          ) : (
+            <span className="file-count text-muted">{t('file.no_files')}</span>
+          )}
+        </div>
         <div style={{ marginTop: '16px' }}>
           <label style={{ display: 'inline-block', marginRight: '16px' }}>
             <input
@@ -651,7 +681,7 @@ const MediaView: React.FC = () => {
         <button
           className="primary-button"
           onClick={() => void startCompression()}
-          disabled={!inputPath || loading}
+          disabled={inputPaths.length === 0 || loading}
         >
           {loading ? <Loader2 className="spin" /> : <Play size={18} />}
           {t('compress.start')}

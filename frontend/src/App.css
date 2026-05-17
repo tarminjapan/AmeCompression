@@ -577,3 +577,61 @@ input[type='range'] {
 .combobox-option:hover {
   background: rgba(59, 130, 246, 0.1);
 }
+
+.file-list {
+  margin-top: 12px;
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background-color: var(--bg-color);
+}
+
+.file-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.file-list-item:last-child {
+  border-bottom: none;
+}
+
+.file-list-path {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  font-size: 0.85rem;
+}
+
+.file-remove-button {
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 2px 6px;
+  flex-shrink: 0;
+}
+
+.file-remove-button:hover {
+  color: #ef4444;
+}
+
+.file-list-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+.file-count {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.text-muted {
+  color: var(--text-muted);
+}

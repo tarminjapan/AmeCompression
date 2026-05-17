@@ -258,6 +258,22 @@ ipcMain.handle('select-file', async () => {
   return result.filePaths[0]
 })
 
+ipcMain.handle('select-files', async () => {
+  if (!mainWindow) return null
+  const result = await dialog.showOpenDialog(mainWindow, {
+    properties: ['openFile', 'multiSelections'],
+    filters: [
+      {
+        name: 'Media Files',
+        extensions: ['mp4', 'mkv', 'avi', 'mov', 'mp3', 'wav', 'flac', 'm4a'],
+      },
+      { name: 'All Files', extensions: ['*'] },
+    ],
+  })
+  if (result.canceled) return null
+  return result.filePaths
+})
+
 app.on('ready', () => {
   startFlask()
   createWindow()

@@ -6,6 +6,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getBackendStatus: () => ipcRenderer.invoke('get-backend-status'),
   restartBackend: () => ipcRenderer.invoke('restart-backend'),
   selectFile: () => ipcRenderer.invoke('select-file'),
+  selectFiles: () => ipcRenderer.invoke('select-files'),
   sendNotification: (title: string, body: string) =>
     ipcRenderer.invoke('send-notification', title, body),
   getPathForFile: (file: File) => {
