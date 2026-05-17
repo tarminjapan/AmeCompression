@@ -6,6 +6,7 @@ import type { Job } from '../types'
 interface ProgressPanelProps {
   jobs: Job[]
   onCancel: (id: string) => void
+  onDismiss: (id: string) => void
 }
 
 function formatTime(seconds: number): string {
@@ -29,7 +30,7 @@ function formatTimeShort(seconds: number): string {
   return `${s}s`
 }
 
-const ProgressPanel: React.FC<ProgressPanelProps> = ({ jobs, onCancel }) => {
+const ProgressPanel: React.FC<ProgressPanelProps> = ({ jobs, onCancel, onDismiss }) => {
   const { t } = useTranslation()
 
   if (jobs.length === 0) return null
@@ -42,7 +43,6 @@ const ProgressPanel: React.FC<ProgressPanelProps> = ({ jobs, onCancel }) => {
           <div key={job.id} className={`job-item ${job.status}`}>
             <div className="job-info">
               <span className="job-type">{job.type === 'video' ? 'Video' : 'Audio'}</span>
-              <span className="job-id">ID: {job.id.substring(0, 8)}</span>
               <span className={`job-status-badge ${job.status}`}>
                 {job.status === 'running' && <Loader2 size={14} className="spin" />}
                 {job.status === 'success' && <CheckCircle size={14} />}
@@ -113,10 +113,22 @@ const ProgressPanel: React.FC<ProgressPanelProps> = ({ jobs, onCancel }) => {
 
             {(job.status === 'running' || job.status === 'starting') && (
               <button
-                className="cancel-button"
+                className="cancel-button job-action-button"
                 onClick={() => {
                   onCancel(job.id)
                 }}
+              >
+                <X size={14} />
+              </button>
+            )}
+
+            {(job.status === 'success' || job.status === 'failed') && (
+              <button
+                className="dismiss-button job-action-button"
+                onClick={() => {
+                  onDismiss(job.id)
+                }}
+                aria-label={t('compress.dismiss')}
               >
                 <X size={14} />
               </button>

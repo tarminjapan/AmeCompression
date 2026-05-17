@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import Layout from './components/Layout'
 import MediaView from './views/MediaView'
@@ -13,6 +13,36 @@ function App(): React.JSX.Element {
   const [activeView, setActiveView] = useState('media')
   const [isReady, setIsReady] = useState(false)
   const { jobs, cancelJob } = useJobs()
+  const [dismissedJobIds, setDismissedJobIds] = useState<Set<string>>(new Set())
+
+  const visibleJobs = jobs.filter((job) => !dismissedJobIds.has(job.id))
+
+  const handleDismissJob = (id: string): void => {
+    setDismissedJobIds((prev) => {
+      const next = new Set(prev)
+      next.add(id)
+      return next
+    })
+  }
+
+  const cleanupDismissed = useCallback(() => {
+    setDismissedJobIds((prev) => {
+      if (prev.size === 0) return prev
+      const currentJobIds = new Set(jobs.map((job) => job.id))
+      const next = new Set<string>()
+      for (const id of prev) {
+        if (currentJobIds.has(id)) {
+          next.add(id)
+        }
+      }
+      if (next.size === prev.size) return prev
+      return next
+    })
+  }, [jobs])
+
+  useEffect(() => {
+    cleanupDismissed()
+  }, [cleanupDismissed])
 
   useEffect(() => {
     // Initial settings fetch to apply theme and language
@@ -65,7 +95,11 @@ function App(): React.JSX.Element {
       <Layout activeView={activeView} onViewChange={setActiveView}>
         {renderView()}
       </Layout>
-      <ProgressPanel jobs={jobs} onCancel={(id) => void cancelJob(id)} />
+      <ProgressPanel
+        jobs={visibleJobs}
+        onCancel={(id) => void cancelJob(id)}
+        onDismiss={handleDismissJob}
+      />
     </>
   )
 }
