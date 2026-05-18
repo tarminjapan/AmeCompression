@@ -2,6 +2,7 @@ import threading
 import time
 import uuid
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 
 from ..progress_handler import CancellationSource, ProgressEvent
@@ -51,6 +52,8 @@ class JobRunner:
         self.start_cleanup_thread()
         task_id = str(uuid.uuid4())
         cancel_source = CancellationSource()
+        input_path = kwargs.get("input_path", "")
+        filename = Path(input_path).name if input_path else ""
 
         max_tasks_limit = 100
         cleanup_batch_size = 20
@@ -74,6 +77,7 @@ class JobRunner:
                 "result": None,
                 "cancel_source": cancel_source,
                 "type": task_type,
+                "filename": filename,
                 "created_at": time.time(),
             }
 
@@ -166,6 +170,7 @@ class JobRunner:
                     "id": t["id"],
                     "status": t["status"],
                     "type": t["type"],
+                    "filename": t.get("filename", ""),
                     "progress": t.get("progress"),
                     "result": t.get("result"),
                     "created_at": t.get("created_at"),
