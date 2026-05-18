@@ -11,7 +11,7 @@ from ..progress_handler import CancellationSource, ProgressEvent
 class JobRunner:
     """Manages background tasks for media compression."""
 
-    def __init__(self, max_concurrent_tasks: int = 2) -> None:
+    def __init__(self, max_concurrent_tasks: int = 1) -> None:
         """Initialize JobRunner."""
         self.tasks: dict[str, Any] = {}
         self.tasks_lock = threading.Lock()

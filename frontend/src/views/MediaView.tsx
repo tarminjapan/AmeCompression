@@ -629,10 +629,10 @@ const MediaView: React.FC = () => {
     const resolvedAudioBitrate = BITRATE_REGEX.test(audioBitrate) ? audioBitrate + 'k' : '192k'
 
     try {
-      const tasks = inputPaths.map((inputPath) => {
+      for (const inputPath of inputPaths) {
         const detectedType = detectMediaType(inputPath)
         if (detectedType === 'video') {
-          return api
+          await api
             .post<{ task_id: string }>('/jobs/video', {
               input_path: inputPath,
               crf,
@@ -648,7 +648,7 @@ const MediaView: React.FC = () => {
               console.error(`Failed to start compression for ${inputPath}`, error)
             })
         } else {
-          return api
+          await api
             .post<{ task_id: string }>('/jobs/audio', {
               input_path: inputPath,
               bitrate: resolvedAudioBitrate,
@@ -660,8 +660,7 @@ const MediaView: React.FC = () => {
               console.error(`Failed to start compression for ${inputPath}`, error)
             })
         }
-      })
-      await Promise.all(tasks)
+      }
     } finally {
       setLoading(false)
     }
