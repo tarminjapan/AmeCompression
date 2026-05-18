@@ -377,8 +377,8 @@ input[type='range'] {
   position: fixed;
   bottom: 24px;
   right: 24px;
-  width: 380px;
-  max-height: 480px;
+  width: 420px;
+  max-height: 520px;
   background-color: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
@@ -422,6 +422,15 @@ input[type='range'] {
   font-weight: 600;
   text-transform: uppercase;
   color: var(--primary-color);
+}
+
+.job-filename {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 200px;
 }
 
 .job-status-badge {

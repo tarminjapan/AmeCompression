@@ -25,6 +25,7 @@ export interface Job {
   progress: Progress | null
   result: TaskResult | null
   type: JobType
+  filename: string
 }
 
 export interface MediaInfo {

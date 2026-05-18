@@ -96,6 +96,7 @@ def get_job_status(task_id: str) -> tuple[Response, int]:
                 "progress": task["progress"],
                 "result": task["result"],
                 "type": task["type"],
+                "filename": task.get("filename", ""),
                 "created_at": task.get("created_at"),
                 "finished_at": task.get("finished_at"),
             }
